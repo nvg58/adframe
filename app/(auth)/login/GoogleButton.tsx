@@ -5,21 +5,37 @@ import { useState } from 'react'
 
 export default function GoogleButton() {
   const [error, setError] = useState('')
+  const [debug, setDebug] = useState('')
 
   const handleClick = async () => {
+    setError('')
+    setDebug('Starting Google login...')
     try {
+      const origin = window.location.origin
+      setDebug(`Origin: ${origin}`)
       const supabase = createClient()
-      const { error } = await supabase.auth.signInWithOAuth({
+      setDebug(`Client created. Calling signInWithOAuth...`)
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${origin}/auth/callback`,
         },
       })
       if (error) {
-        setError('Google login failed. Use Email sign-in below instead.')
+        setError(`Google login failed: ${error.message}`)
+        setDebug(`Error: ${error.message}`)
+      } else {
+        setDebug(`OAuth URL: ${data?.url || 'no url'}`)
+        // If signInWithOAuth didn't auto-redirect, manually navigate
+        if (data?.url) {
+          setDebug(`Redirecting manually...`)
+          window.location.href = data.url
+        }
       }
-    } catch {
-      setError('Google login is not supported on this browser. Use Email sign-in below.')
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setError(`Google login error: ${msg}`)
+      setDebug(`Catch: ${msg}`)
     }
   }
 
@@ -56,6 +72,11 @@ export default function GoogleButton() {
       {error && (
         <div style={{ padding: '10px', marginTop: '8px', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', color: '#DC2626', fontSize: '13px', textAlign: 'center' as const }}>
           {error}
+        </div>
+      )}
+      {debug && (
+        <div style={{ padding: '8px', marginTop: '8px', backgroundColor: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '8px', color: '#0369A1', fontSize: '11px', fontFamily: 'monospace', whiteSpace: 'pre-wrap' as const, wordBreak: 'break-all' as const }}>
+          {debug}
         </div>
       )}
     </>
