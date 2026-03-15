@@ -1,5 +1,5 @@
 // Config — change this to your deployed domain
-const API_BASE = 'http://localhost:3002';
+const API_BASE = 'https://adframe.vercel.app';
 const SUPABASE_URL = 'https://qlxxcnbvmhwerhstjvxp.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFseHhjbmJ2bWh3ZXJoc3RqdnhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NjQ2NTksImV4cCI6MjA4OTE0MDY1OX0.7OvRIGvfmTOXTJCvnfQd1oW_N5d54H8PVOpNv8wg3t0';
 
