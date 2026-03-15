@@ -28,7 +28,7 @@ export default function ReaderHeader({
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-30 bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800">
+    <header className="sticky top-0 z-30 bg-white dark:bg-[#1a1a1a] border-b border-gray-100 dark:border-gray-800">
       <div className="flex items-center justify-between px-4 h-12">
         {/* Back button */}
         <button

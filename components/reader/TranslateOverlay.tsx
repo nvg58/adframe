@@ -94,7 +94,7 @@ export default function TranslateOverlay({
           <div className="space-y-3">
             <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
               <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                className="bg-blue-600 h-2 rounded-full"
                 style={{ width: `${total > 0 ? (progress / total) * 100 : 0}%` }}
               />
             </div>

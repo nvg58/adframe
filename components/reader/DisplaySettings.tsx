@@ -27,7 +27,7 @@ export default function DisplaySettings({
               <button
                 key={opt.value}
                 onClick={() => setTheme(opt.value)}
-                className={`flex flex-col items-center gap-1.5 py-3 rounded-xl text-sm font-medium transition-colors ${
+                className={`flex flex-col items-center gap-1.5 py-3 rounded-xl text-sm font-medium  ${
                   theme === opt.value
                     ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 active:bg-gray-200 dark:active:bg-gray-600'
@@ -52,7 +52,7 @@ export default function DisplaySettings({
               <button
                 key={opt.value}
                 onClick={() => setFontSize(opt.value)}
-                className={`flex flex-col items-center gap-1 py-3 rounded-xl text-sm font-medium transition-colors ${
+                className={`flex flex-col items-center gap-1 py-3 rounded-xl text-sm font-medium  ${
                   fontSize === opt.value
                     ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 active:bg-gray-200 dark:active:bg-gray-600'

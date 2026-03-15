@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { splitHtmlIntoParagraphs, md5 } from '@/lib/utils'
@@ -51,20 +51,41 @@ export default function ReaderView({ item }: { item: ItemData }) {
     }
   }
 
+  const [exportStatus, setExportStatus] = useState<'idle' | 'copied' | 'failed'>('idle')
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+
   const handleExport = async () => {
     try {
       const res = await fetch(`/api/export?inbox_item_id=${item.id}`)
       const data = await res.json()
-      await navigator.clipboard.writeText(data.formatted_text)
-      alert('Copied to clipboard!')
+      // Clipboard API with fallback for older browsers
+      try {
+        await navigator.clipboard.writeText(data.formatted_text)
+      } catch {
+        const textarea = document.createElement('textarea')
+        textarea.value = data.formatted_text
+        textarea.style.position = 'fixed'
+        textarea.style.opacity = '0'
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+      }
+      setExportStatus('copied')
+      setTimeout(() => setExportStatus('idle'), 2000)
     } catch {
-      alert('Failed to copy')
+      setExportStatus('failed')
+      setTimeout(() => setExportStatus('idle'), 2000)
     }
   }
 
   const handleDelete = async () => {
-    if (!confirm('Delete this article? This cannot be undone.')) return
+    if (!confirmingDelete) {
+      setConfirmingDelete(true)
+      return
+    }
     setDeleting(true)
+    setConfirmingDelete(false)
     try {
       const { error } = await supabase
         .from('inbox_items')
@@ -73,11 +94,9 @@ export default function ReaderView({ item }: { item: ItemData }) {
       if (!error) {
         router.push('/inbox')
       } else {
-        alert('Failed to delete')
         setDeleting(false)
       }
     } catch {
-      alert('Failed to delete')
       setDeleting(false)
     }
   }
@@ -125,7 +144,7 @@ export default function ReaderView({ item }: { item: ItemData }) {
       onClick: () => setShowDisplaySettings(true),
     },
     {
-      label: 'Export for Claude',
+      label: exportStatus === 'copied' ? 'Copied!' : exportStatus === 'failed' ? 'Copy failed' : 'Export for Claude',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -149,7 +168,7 @@ export default function ReaderView({ item }: { item: ItemData }) {
       onClick: handleMarkAsRead,
     },
     {
-      label: deleting ? 'Deleting...' : 'Delete',
+      label: deleting ? 'Deleting...' : confirmingDelete ? 'Tap again to confirm' : 'Delete',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="3 6 5 6 21 6" />
@@ -271,8 +290,8 @@ function InteractiveContent({
   )
 }
 
-// Single paragraph with tap-to-translate
-function TappableParagraph({
+// Single paragraph with tap-to-translate (memoized to prevent re-renders)
+const TappableParagraph = memo(function TappableParagraph({
   html,
   plainText,
   itemId,
@@ -302,6 +321,8 @@ function TappableParagraph({
 
     setLoading(true)
     try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 15000)
       const res = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -310,7 +331,9 @@ function TappableParagraph({
           text: plainText,
           paragraph_hash: md5(plainText),
         }),
+        signal: controller.signal,
       })
+      clearTimeout(timeout)
 
       if (res.ok) {
         const data = await res.json()
@@ -318,7 +341,7 @@ function TappableParagraph({
         setVisible(true)
       }
     } catch {
-      // Silent fail
+      // Silent fail (includes timeout abort)
     }
     setLoading(false)
   }
@@ -353,4 +376,4 @@ function TappableParagraph({
       )}
     </div>
   )
-}
+})
