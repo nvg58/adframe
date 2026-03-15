@@ -33,42 +33,39 @@ export default function FontSizeControls() {
   const isMin = fontSize === FONT_SIZES[0]
   const isMax = fontSize === FONT_SIZES[FONT_SIZES.length - 1]
 
-  const btnStyle: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    width: '32px', height: '32px',
-    border: '1px solid #d1d5db', borderRadius: '6px',
-    backgroundColor: '#fff', color: '#374151',
-    cursor: 'pointer', padding: 0,
-  }
-
-  const disabledStyle: React.CSSProperties = {
-    ...btnStyle,
-    opacity: 0.3, cursor: 'default',
-  }
-
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
       <button
         onClick={() => change(-1)}
         disabled={isMin}
-        style={isMin ? disabledStyle : btnStyle}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: '36px', height: '36px',
+          border: '1px solid #d1d5db', borderRadius: '8px',
+          backgroundColor: '#fff', color: '#374151',
+          cursor: isMin ? 'default' : 'pointer', padding: 0,
+          opacity: isMin ? 0.3 : 1,
+        }}
         title="Smaller text"
         aria-label="Decrease font size"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <text x="4" y="19" fontSize="11" fontWeight="bold" fill="currentColor">A</text>
-        </svg>
+        <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'Georgia, serif' }}>A</span>
       </button>
       <button
         onClick={() => change(1)}
         disabled={isMax}
-        style={isMax ? disabledStyle : btnStyle}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: '36px', height: '36px',
+          border: '1px solid #d1d5db', borderRadius: '8px',
+          backgroundColor: '#fff', color: '#374151',
+          cursor: isMax ? 'default' : 'pointer', padding: 0,
+          opacity: isMax ? 0.3 : 1,
+        }}
         title="Larger text"
         aria-label="Increase font size"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <text x="2" y="19" fontSize="18" fontWeight="bold" fill="currentColor">A</text>
-        </svg>
+        <span style={{ fontSize: '18px', fontWeight: 700, fontFamily: 'Georgia, serif' }}>A</span>
       </button>
     </div>
   )
