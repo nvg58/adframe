@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useCallback, memo } from 'react'
+import { useState, useCallback, useEffect, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { splitHtmlIntoParagraphs, md5 } from '@/lib/utils'
 import ReaderHeader from '@/components/reader/ReaderHeader'
 import DisplaySettings from '@/components/reader/DisplaySettings'
 import TranslateOverlay from '@/components/reader/TranslateOverlay'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'
 
 interface ItemData {
   id: string
@@ -31,8 +32,26 @@ export default function ReaderView({ item }: { item: ItemData }) {
   const [showTranslation, setShowTranslation] = useState(false)
   const [statusText, setStatusText] = useState(item.status)
   const [deleting, setDeleting] = useState(false)
+  const [jsErrors, setJsErrors] = useState<string[]>([])
   const router = useRouter()
   const supabase = createClient()
+
+  // Catch unhandled JS errors and show them on screen (for einkbro debugging)
+  useEffect(() => {
+    const handler = (e: ErrorEvent) => {
+      setJsErrors(prev => [...prev.slice(-4), `${e.message} at ${e.filename}:${e.lineno}`])
+    }
+    const rejectionHandler = (e: PromiseRejectionEvent) => {
+      const msg = e.reason?.message || e.reason?.toString() || 'Unhandled promise rejection'
+      setJsErrors(prev => [...prev.slice(-4), msg])
+    }
+    window.addEventListener('error', handler)
+    window.addEventListener('unhandledrejection', rejectionHandler)
+    return () => {
+      window.removeEventListener('error', handler)
+      window.removeEventListener('unhandledrejection', rejectionHandler)
+    }
+  }, [])
 
   const paragraphs = splitHtmlIntoParagraphs(item.content)
 
@@ -185,6 +204,26 @@ export default function ReaderView({ item }: { item: ItemData }) {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#1a1a1a]">
+      {/* On-screen error log for debugging on einkbro */}
+      {jsErrors.length > 0 && (
+        <div style={{
+          position: 'relative', zIndex: 9999, padding: '8px 12px',
+          backgroundColor: '#fee', borderBottom: '2px solid #f88',
+          fontSize: '11px', fontFamily: 'monospace', lineHeight: '1.4',
+        }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>JS Errors ({jsErrors.length}):</div>
+          {jsErrors.map((err, i) => (
+            <div key={i} style={{ color: '#c00', wordBreak: 'break-all' }}>{err}</div>
+          ))}
+          <button
+            onClick={() => setJsErrors([])}
+            style={{ marginTop: '4px', padding: '2px 8px', fontSize: '11px', border: '1px solid #f88', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       <ReaderHeader menuItems={menuItems} actions={headerActions} />
 
       {/* Article header */}
@@ -224,11 +263,13 @@ export default function ReaderView({ item }: { item: ItemData }) {
 
       {/* Article body */}
       <div className="max-w-2xl mx-auto px-5 pb-20">
-        <InteractiveContent
-          paragraphs={paragraphs}
-          itemId={item.id}
-          bulkTranslations={showTranslation ? translations : []}
-        />
+        <ErrorBoundary fallbackMessage="Failed to render article content">
+          <InteractiveContent
+            paragraphs={paragraphs}
+            itemId={item.id}
+            bulkTranslations={showTranslation ? translations : []}
+          />
+        </ErrorBoundary>
       </div>
 
       {/* Bottom sheets */}
