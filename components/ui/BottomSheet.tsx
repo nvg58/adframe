@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function BottomSheet({
   open,
@@ -13,30 +13,59 @@ export default function BottomSheet({
   title?: string
   children: React.ReactNode
 }) {
+  const [scrollY, setScrollY] = useState(0)
+
   useEffect(() => {
     if (open) {
-      document.body.style.overflow = 'hidden'
+      // Capture scroll position when opening
+      setScrollY(window.scrollY || window.pageYOffset || 0)
+      try { document.body.style.overflow = 'hidden' } catch {}
     } else {
-      document.body.style.overflow = ''
+      try { document.body.style.overflow = '' } catch {}
     }
     return () => {
-      document.body.style.overflow = ''
+      try { document.body.style.overflow = '' } catch {}
     }
   }, [open])
 
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50">
+    // Use absolute positioning instead of fixed (fixed breaks on einkbro)
+    <div
+      style={{
+        position: 'absolute',
+        top: `${scrollY}px`,
+        left: 0,
+        right: 0,
+        height: '100vh',
+        zIndex: 50,
+      }}
+    >
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-black/30"
         onClick={onClose}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.3)',
+        }}
       />
 
       {/* Sheet */}
-      <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#262626] rounded-t-2xl max-h-[70vh] flex flex-col"
-        style={{ paddingBottom: 'calc(var(--bottom-nav-height, 56px) + env(safe-area-inset-bottom, 0px))' }}
+      <div
+        className="bg-white dark:bg-[#262626] rounded-t-2xl flex flex-col"
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          maxHeight: '70vh',
+          paddingBottom: 'calc(var(--bottom-nav-height, 56px) + env(safe-area-inset-bottom, 0px))',
+        }}
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-2">

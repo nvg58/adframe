@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface MenuItem {
@@ -26,6 +26,27 @@ export default function ReaderHeader({
 }) {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close menu when clicking outside (replaces fixed overlay that breaks einkbro)
+  useEffect(() => {
+    if (!menuOpen) return
+    const handleClick = (e: MouseEvent | TouchEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    // Use timeout to avoid immediately closing from the same click that opened it
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleClick)
+      document.addEventListener('touchend', handleClick)
+    }, 10)
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('click', handleClick)
+      document.removeEventListener('touchend', handleClick)
+    }
+  }, [menuOpen])
 
   return (
     <header className="sticky top-0 z-30 bg-white dark:bg-[#1a1a1a] border-b border-gray-100 dark:border-gray-800">
@@ -60,7 +81,7 @@ export default function ReaderHeader({
 
         {/* Three-dot menu */}
         {menuItems.length > 0 && (
-          <div className="relative">
+          <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="flex items-center justify-center w-10 h-10 -mr-2 text-gray-700 dark:text-gray-300"
@@ -73,33 +94,27 @@ export default function ReaderHeader({
               </svg>
             </button>
 
-            {/* Dropdown menu */}
+            {/* Dropdown menu — no fixed overlay, uses document click to close */}
             {menuOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setMenuOpen(false)}
-                />
-                <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-[#262626] rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-50">
-                  {menuItems.map((item, i) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        setMenuOpen(false)
-                        item.onClick()
-                      }}
-                      className={`flex items-center gap-3 w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 ${
-                        item.destructive
-                          ? 'text-red-600 dark:text-red-400'
-                          : 'text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      <span className={item.destructive ? 'text-red-400 dark:text-red-500' : 'text-gray-400 dark:text-gray-500'}>{item.icon}</span>
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </>
+              <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-[#262626] rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-50">
+                {menuItems.map((item, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setMenuOpen(false)
+                      item.onClick()
+                    }}
+                    className={`flex items-center gap-3 w-full px-4 py-3 text-left text-sm active:bg-gray-100 dark:active:bg-gray-600 ${
+                      item.destructive
+                        ? 'text-red-600 dark:text-red-400'
+                        : 'text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    <span className={item.destructive ? 'text-red-400 dark:text-red-500' : 'text-gray-400 dark:text-gray-500'}>{item.icon}</span>
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         )}

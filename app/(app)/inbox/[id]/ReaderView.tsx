@@ -39,10 +39,20 @@ export default function ReaderView({ item }: { item: ItemData }) {
   // Catch unhandled JS errors and show them on screen (for einkbro debugging)
   useEffect(() => {
     const handler = (e: ErrorEvent) => {
+      // Auto-reload on chunk load failures (stale deployment cache)
+      if (e.message?.includes('Loading chunk') || e.message?.includes('ChunkLoadError')) {
+        try { window.location.reload() } catch {}
+        return
+      }
       setJsErrors(prev => [...prev.slice(-4), `${e.message} at ${e.filename}:${e.lineno}`])
     }
     const rejectionHandler = (e: PromiseRejectionEvent) => {
       const msg = e.reason?.message || e.reason?.toString() || 'Unhandled promise rejection'
+      // Auto-reload on chunk load failures
+      if (msg?.includes('Loading chunk') || msg?.includes('ChunkLoadError')) {
+        try { window.location.reload() } catch {}
+        return
+      }
       setJsErrors(prev => [...prev.slice(-4), msg])
     }
     window.addEventListener('error', handler)

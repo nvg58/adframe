@@ -29,6 +29,15 @@ export default class ErrorBoundary extends React.Component<Props, State> {
     } catch {
       // Console not available
     }
+
+    // Auto-reload on ChunkLoadError (stale deployment cache)
+    if (error.name === 'ChunkLoadError' || error.message?.includes('Loading chunk')) {
+      try {
+        window.location.reload()
+      } catch {
+        // Reload not available
+      }
+    }
   }
 
   render() {
