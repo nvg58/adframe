@@ -29,11 +29,9 @@ export default async function InboxReaderPage({
   // Fetch translations server-side if requested
   const translationMap = new Map<number, string>()
   if (showTranslation) {
-    // Get plain text for each paragraph
     const plainTexts = paragraphs.map(p => stripHtml(p)).filter(t => t.length > 10)
     const hashes = plainTexts.map(t => md5(t))
 
-    // Check cache first
     const { data: cached } = await supabase
       .from('translations')
       .select('paragraph_hash, translated_text')
@@ -45,7 +43,6 @@ export default async function InboxReaderPage({
       cached.forEach(c => cacheMap.set(c.paragraph_hash, c.translated_text))
     }
 
-    // Translate uncached paragraphs
     let paraIndex = 0
     for (let i = 0; i < paragraphs.length; i++) {
       const plain = stripHtml(paragraphs[i])
@@ -57,7 +54,6 @@ export default async function InboxReaderPage({
       if (!translated) {
         try {
           translated = await translateText(plain)
-          // Cache it
           await supabase.from('translations').upsert({
             inbox_item_id: item.id,
             paragraph_hash: hash,
@@ -94,54 +90,106 @@ export default async function InboxReaderPage({
     ].filter(Boolean).join('\n')
   }
 
+  /* Icon button style — reused for all header actions */
+  const iconBtnStyle = {
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    width: '40px', height: '40px',
+    border: 'none', borderRadius: '8px',
+    backgroundColor: 'transparent', color: '#6b7280',
+    cursor: 'pointer', textDecoration: 'none',
+    padding: 0,
+  } as const
+
+  const iconBtnActiveStyle = {
+    ...iconBtnStyle,
+    backgroundColor: '#dbeafe', color: '#2563eb',
+  } as const
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
-      {/* Header — plain HTML, works without JS */}
+      {/* Header with all actions as icon buttons */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 10,
         backgroundColor: '#fff', borderBottom: '1px solid #e5e7eb',
-        padding: '0 12px', height: '48px',
+        padding: '0 8px', height: '48px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <a
-          href="/inbox"
-          style={{
-            color: '#374151', textDecoration: 'none', fontSize: '14px',
-            display: 'flex', alignItems: 'center', gap: '4px',
-            padding: '8px 4px',
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {/* Back */}
+        <a href="/inbox" style={iconBtnStyle} title="Back">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
-          Back
         </a>
 
-        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-          {/* Translate toggle — plain <a> link, no JS needed */}
-          {showTranslation ? (
-            <a
-              href={`/inbox/${item.id}`}
-              style={{
-                padding: '6px 12px', fontSize: '13px', fontWeight: 500,
-                backgroundColor: '#dbeafe', color: '#2563eb',
-                borderRadius: '8px', textDecoration: 'none',
-              }}
+        {/* Right-side actions */}
+        <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+          {/* Translate */}
+          <a
+            href={showTranslation ? `/inbox/${item.id}` : `/inbox/${item.id}?translate=true`}
+            style={showTranslation ? iconBtnActiveStyle : iconBtnStyle}
+            title={showTranslation ? 'Hide Translation' : 'Translate'}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 8l6 6" />
+              <path d="M4 14l6-6 2-3" />
+              <path d="M2 5h12" />
+              <path d="M7 2h1" />
+              <path d="M22 22l-5-10-5 10" />
+              <path d="M14 18h6" />
+            </svg>
+          </a>
+
+          {/* Export */}
+          <a
+            href={showExport ? `/inbox/${item.id}` : `/inbox/${item.id}?export=true`}
+            style={showExport ? iconBtnActiveStyle : iconBtnStyle}
+            title="Export for Claude"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </a>
+
+          {/* Mark as Read/Unread */}
+          <form action={markAsRead} style={{ margin: 0 }}>
+            <input type="hidden" name="id" value={item.id} />
+            <input type="hidden" name="newStatus" value={item.status === 'read' ? 'unread' : 'read'} />
+            <button
+              type="submit"
+              style={item.status === 'read' ? iconBtnActiveStyle : iconBtnStyle}
+              title={item.status === 'read' ? 'Mark as Unread' : 'Mark as Read'}
             >
-              Hide Translation
-            </a>
-          ) : (
-            <a
-              href={`/inbox/${item.id}?translate=true`}
-              style={{
-                padding: '6px 12px', fontSize: '13px', fontWeight: 500,
-                color: '#6b7280', border: '1px solid #d1d5db',
-                borderRadius: '8px', textDecoration: 'none',
-              }}
-            >
-              Translate
-            </a>
-          )}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {item.status === 'read' ? (
+                  <>
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </>
+                ) : (
+                  <>
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 12h8" />
+                  </>
+                )}
+              </svg>
+            </button>
+          </form>
+
+          {/* Delete */}
+          <form action={deleteItem} style={{ margin: 0 }}>
+            <input type="hidden" name="id" value={item.id} />
+            <button type="submit" style={{ ...iconBtnStyle, color: '#ef4444' }} title="Delete">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+              </svg>
+            </button>
+          </form>
         </div>
       </header>
 
@@ -155,7 +203,7 @@ export default async function InboxReaderPage({
           <p style={{ fontSize: '14px', fontWeight: 600, color: '#166534', marginBottom: '8px' }}>
             Export for Claude Project
           </p>
-          <p style={{ fontSize: '12px', color: '#4ade80', marginBottom: '12px' }}>
+          <p style={{ fontSize: '12px', color: '#15803d', marginBottom: '12px' }}>
             Select all text below and copy it.
           </p>
           <textarea
@@ -183,7 +231,7 @@ export default async function InboxReaderPage({
       )}
 
       {/* Article */}
-      <article style={{ maxWidth: '640px', margin: '0 auto', padding: '32px 20px 20px' }}>
+      <article style={{ maxWidth: '640px', margin: '0 auto', padding: '32px 20px 40px' }}>
         {/* Tags */}
         {item.tags && item.tags.length > 0 && (
           <p style={{
@@ -223,7 +271,6 @@ export default async function InboxReaderPage({
           {paragraphs.map((para, i) => (
             <div key={i}>
               <div dangerouslySetInnerHTML={{ __html: para }} style={{ marginBottom: '4px' }} />
-              {/* Inline translation */}
               {showTranslation && translationMap.has(i) && (
                 <div style={{
                   marginTop: '4px', marginBottom: '8px',
@@ -239,60 +286,6 @@ export default async function InboxReaderPage({
           ))}
         </div>
       </article>
-
-      {/* Actions — server actions, work without JS */}
-      <div style={{
-        maxWidth: '640px', margin: '0 auto',
-        padding: '20px 20px 120px',
-        display: 'flex', flexDirection: 'column', gap: '8px',
-      }}>
-        {/* Export */}
-        <a
-          href={`/inbox/${item.id}?export=true`}
-          style={{
-            display: 'block', width: '100%', padding: '12px',
-            border: '1px solid #d1d5db', borderRadius: '8px',
-            backgroundColor: '#fff', color: '#374151',
-            fontSize: '14px', textAlign: 'center', textDecoration: 'none',
-            boxSizing: 'border-box',
-          }}
-        >
-          Export for Claude
-        </a>
-
-        {/* Mark as Read/Unread */}
-        <form action={markAsRead}>
-          <input type="hidden" name="id" value={item.id} />
-          <input type="hidden" name="newStatus" value={item.status === 'read' ? 'unread' : 'read'} />
-          <button
-            type="submit"
-            style={{
-              width: '100%', padding: '12px',
-              border: '1px solid #d1d5db', borderRadius: '8px',
-              backgroundColor: '#fff', color: '#374151',
-              fontSize: '14px', cursor: 'pointer',
-            }}
-          >
-            {item.status === 'read' ? 'Mark as Unread' : 'Mark as Read'}
-          </button>
-        </form>
-
-        {/* Delete */}
-        <form action={deleteItem}>
-          <input type="hidden" name="id" value={item.id} />
-          <button
-            type="submit"
-            style={{
-              width: '100%', padding: '12px',
-              border: '1px solid #fecaca', borderRadius: '8px',
-              backgroundColor: '#fff', color: '#dc2626',
-              fontSize: '14px', cursor: 'pointer',
-            }}
-          >
-            Delete
-          </button>
-        </form>
-      </div>
     </div>
   )
 }
