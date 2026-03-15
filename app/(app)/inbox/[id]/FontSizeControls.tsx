@@ -33,39 +33,33 @@ export default function FontSizeControls() {
   const isMin = fontSize === FONT_SIZES[0]
   const isMax = fontSize === FONT_SIZES[FONT_SIZES.length - 1]
 
+  const btnBase: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    width: '38px', height: '38px',
+    border: '1px solid #d1d5db', borderRadius: '8px',
+    backgroundColor: '#fff', color: '#374151',
+    cursor: 'pointer', padding: 0,
+  }
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
       <button
         onClick={() => change(-1)}
         disabled={isMin}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          width: '36px', height: '36px',
-          border: '1px solid #d1d5db', borderRadius: '8px',
-          backgroundColor: '#fff', color: '#374151',
-          cursor: isMin ? 'default' : 'pointer', padding: 0,
-          opacity: isMin ? 0.3 : 1,
-        }}
+        style={{ ...btnBase, opacity: isMin ? 0.3 : 1, cursor: isMin ? 'default' : 'pointer' }}
         title="Smaller text"
         aria-label="Decrease font size"
       >
-        <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'Georgia, serif' }}>A</span>
+        <span style={{ fontSize: '13px', fontWeight: 700, fontFamily: 'Georgia, serif' }}>A</span>
       </button>
       <button
         onClick={() => change(1)}
         disabled={isMax}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          width: '36px', height: '36px',
-          border: '1px solid #d1d5db', borderRadius: '8px',
-          backgroundColor: '#fff', color: '#374151',
-          cursor: isMax ? 'default' : 'pointer', padding: 0,
-          opacity: isMax ? 0.3 : 1,
-        }}
+        style={{ ...btnBase, opacity: isMax ? 0.3 : 1, cursor: isMax ? 'default' : 'pointer' }}
         title="Larger text"
         aria-label="Increase font size"
       >
-        <span style={{ fontSize: '18px', fontWeight: 700, fontFamily: 'Georgia, serif' }}>A</span>
+        <span style={{ fontSize: '20px', fontWeight: 700, fontFamily: 'Georgia, serif' }}>A</span>
       </button>
     </div>
   )

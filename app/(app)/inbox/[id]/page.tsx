@@ -91,124 +91,112 @@ export default async function InboxReaderPage({
     ].filter(Boolean).join('\n')
   }
 
-  /* Toolbar button helper */
-  const tbBtn = (active?: boolean): React.CSSProperties => ({
+  /* Icon button — 44px touch target, 24px icon */
+  const iconBtn = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    width: '40px', height: '40px',
-    border: 'none', borderRadius: '10px',
-    backgroundColor: active ? '#dbeafe' : 'transparent',
-    color: active ? '#2563eb' : '#555',
+    width: '44px', height: '44px',
+    border: 'none', borderRadius: '8px',
+    backgroundColor: 'transparent', color: '#6b7280',
     cursor: 'pointer', textDecoration: 'none',
-    padding: 0, flexShrink: 0,
-  })
+    padding: 0,
+  } as const
+
+  const iconBtnActive = {
+    ...iconBtn,
+    backgroundColor: '#dbeafe', color: '#2563eb',
+  } as const
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
-      {/* ===== Two-row header ===== */}
+      {/* Header — single row, bigger buttons */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 10,
-        backgroundColor: '#fff',
-        borderBottom: '1px solid #e5e7eb',
+        backgroundColor: '#fff', borderBottom: '1px solid #e5e7eb',
+        padding: '0 6px', height: '56px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        {/* Row 1 — Back + Title */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '4px',
-          padding: '10px 12px 2px',
-        }}>
-          <a href="/inbox" style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: '28px', height: '28px', flexShrink: 0,
-            color: '#555', textDecoration: 'none',
-          }} title="Back">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </a>
-          <h1 style={{
-            flex: 1, margin: 0, fontSize: '15px', fontWeight: 600,
-            color: '#111', overflow: 'hidden', textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}>
-            {item.title}
-          </h1>
-        </div>
+        {/* Back */}
+        <a href="/inbox" style={iconBtn} title="Back">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </a>
 
-        {/* Row 2 — Toolbar: font size left, actions right */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '4px 8px 8px',
-        }}>
+        {/* Right-side actions */}
+        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
           {/* Font size controls */}
           <FontSizeControls />
 
-          {/* Action icons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-            {/* Translate */}
-            <a
-              href={showTranslation ? `/inbox/${item.id}` : `/inbox/${item.id}?translate=true`}
-              style={tbBtn(showTranslation)}
-              title={showTranslation ? 'Hide Translation' : 'Translate'}
+          {/* Separator */}
+          <div style={{ width: '1px', height: '24px', backgroundColor: '#e5e7eb', margin: '0 4px' }} />
+
+          {/* Translate */}
+          <a
+            href={showTranslation ? `/inbox/${item.id}` : `/inbox/${item.id}?translate=true`}
+            style={showTranslation ? iconBtnActive : iconBtn}
+            title={showTranslation ? 'Hide Translation' : 'Translate'}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 8l6 6" />
+              <path d="M4 14l6-6 2-3" />
+              <path d="M2 5h12" />
+              <path d="M7 2h1" />
+              <path d="M22 22l-5-10-5 10" />
+              <path d="M14 18h6" />
+            </svg>
+          </a>
+
+          {/* Export */}
+          <a
+            href={showExport ? `/inbox/${item.id}` : `/inbox/${item.id}?export=true`}
+            style={showExport ? iconBtnActive : iconBtn}
+            title="Export for Claude"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </a>
+
+          {/* Mark as Read/Unread */}
+          <form action={markAsRead} style={{ margin: 0 }}>
+            <input type="hidden" name="id" value={item.id} />
+            <input type="hidden" name="newStatus" value={item.status === 'read' ? 'unread' : 'read'} />
+            <button
+              type="submit"
+              style={item.status === 'read' ? iconBtnActive : iconBtn}
+              title={item.status === 'read' ? 'Mark as Unread' : 'Mark as Read'}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 8l6 6" />
-                <path d="M4 14l6-6 2-3" />
-                <path d="M2 5h12" />
-                <path d="M7 2h1" />
-                <path d="M22 22l-5-10-5 10" />
-                <path d="M14 18h6" />
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {item.status === 'read' ? (
+                  <>
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </>
+                ) : (
+                  <>
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 12h8" />
+                  </>
+                )}
               </svg>
-            </a>
+            </button>
+          </form>
 
-            {/* Export */}
-            <a
-              href={showExport ? `/inbox/${item.id}` : `/inbox/${item.id}?export=true`}
-              style={tbBtn(showExport)}
-              title="Export for Claude"
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
+          {/* Delete */}
+          <form action={deleteItem} style={{ margin: 0 }}>
+            <input type="hidden" name="id" value={item.id} />
+            <button type="submit" style={{ ...iconBtn, color: '#ef4444' }} title="Delete">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
               </svg>
-            </a>
-
-            {/* Mark as Read/Unread */}
-            <form action={markAsRead} style={{ margin: 0 }}>
-              <input type="hidden" name="id" value={item.id} />
-              <input type="hidden" name="newStatus" value={item.status === 'read' ? 'unread' : 'read'} />
-              <button type="submit" style={tbBtn(item.status === 'read')}
-                title={item.status === 'read' ? 'Mark as Unread' : 'Mark as Read'}
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  {item.status === 'read' ? (
-                    <>
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                      <polyline points="22 4 12 14.01 9 11.01" />
-                    </>
-                  ) : (
-                    <>
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="9 12 12 15 16 10" />
-                    </>
-                  )}
-                </svg>
-              </button>
-            </form>
-
-            {/* Delete */}
-            <form action={deleteItem} style={{ margin: 0 }}>
-              <input type="hidden" name="id" value={item.id} />
-              <button type="submit" style={{ ...tbBtn(), color: '#dc2626' }} title="Delete">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                  <path d="M10 11v6" />
-                  <path d="M14 11v6" />
-                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                </svg>
-              </button>
-            </form>
-          </div>
+            </button>
+          </form>
         </div>
       </header>
 
