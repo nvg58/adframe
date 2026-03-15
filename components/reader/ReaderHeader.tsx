@@ -10,10 +10,19 @@ interface MenuItem {
   destructive?: boolean
 }
 
+interface HeaderAction {
+  icon: React.ReactNode
+  onClick: () => void
+  active?: boolean
+  label: string
+}
+
 export default function ReaderHeader({
   menuItems = [],
+  actions = [],
 }: {
   menuItems?: MenuItem[]
+  actions?: HeaderAction[]
 }) {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -31,6 +40,23 @@ export default function ReaderHeader({
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
+
+        <div className="flex items-center gap-1">
+        {/* Quick action buttons */}
+        {actions.map((action, i) => (
+          <button
+            key={i}
+            onClick={action.onClick}
+            className={`flex items-center justify-center w-10 h-10 rounded-lg ${
+              action.active
+                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                : 'text-gray-500 dark:text-gray-400'
+            }`}
+            aria-label={action.label}
+          >
+            {action.icon}
+          </button>
+        ))}
 
         {/* Three-dot menu */}
         {menuItems.length > 0 && (
@@ -77,6 +103,7 @@ export default function ReaderHeader({
             )}
           </div>
         )}
+        </div>
       </div>
     </header>
   )

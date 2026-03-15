@@ -88,11 +88,19 @@ export default function ReaderView({ item }: { item: ItemData }) {
     setShowTranslation(true)
   }, [])
 
-  const menuItems = [
+  const handleTranslateClick = () => {
+    if (translations.length > 0) {
+      setShowTranslation(!showTranslation)
+    } else {
+      setShowTranslateSheet(true)
+    }
+  }
+
+  const headerActions = [
     {
       label: showTranslation ? 'Hide Translation' : 'Translate',
       icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M5 8l6 6" />
           <path d="M4 14l6-6 2-3" />
           <path d="M2 5h12" />
@@ -101,14 +109,12 @@ export default function ReaderView({ item }: { item: ItemData }) {
           <path d="M14 18h6" />
         </svg>
       ),
-      onClick: () => {
-        if (translations.length > 0) {
-          setShowTranslation(!showTranslation)
-        } else {
-          setShowTranslateSheet(true)
-        }
-      },
+      onClick: handleTranslateClick,
+      active: showTranslation,
     },
+  ]
+
+  const menuItems = [
     {
       label: 'Display Settings',
       icon: (
@@ -161,7 +167,7 @@ export default function ReaderView({ item }: { item: ItemData }) {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#1a1a1a]">
-      <ReaderHeader menuItems={menuItems} />
+      <ReaderHeader menuItems={menuItems} actions={headerActions} />
 
       {/* Article header */}
       <div className="max-w-2xl mx-auto px-5 pt-8 pb-4">
