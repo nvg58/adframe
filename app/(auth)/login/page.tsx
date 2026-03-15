@@ -26,7 +26,12 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.signInWithOtp({ email })
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
     if (error) {
       setError(error.message)
     } else {
@@ -128,7 +133,10 @@ export default function LoginPage() {
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-              OTP code sent to <strong className="text-gray-900 dark:text-gray-100">{email}</strong>
+              Check your email at <strong className="text-gray-900 dark:text-gray-100">{email}</strong>
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+              Enter the 6-digit code, or click the magic link in the email
             </p>
             <input
               type="text"
