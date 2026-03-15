@@ -28,17 +28,7 @@ export default function LoginPage({
           </div>
         )}
 
-        {/* Google OAuth - only works with JS */}
-        <GoogleButton />
-
-        {/* Divider */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0' }}>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#D1D5DB' }} />
-          <span style={{ fontSize: '14px', color: '#9CA3AF' }}>or</span>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#D1D5DB' }} />
-        </div>
-
-        {/* Email OTP - works without JS via server actions */}
+        {/* Email OTP — works without JS, compatible with einkbro/e-ink */}
         {step === 'otp' ? (
           <form action={verifyOtp}>
             <input type="hidden" name="email" value={email} />
@@ -143,6 +133,21 @@ export default function LoginPage({
             </button>
           </form>
         )}
+
+        {/* Divider */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0' }}>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#D1D5DB' }} />
+          <span style={{ fontSize: '14px', color: '#9CA3AF' }}>or</span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#D1D5DB' }} />
+        </div>
+
+        {/* Google OAuth — requires JS, won't work on einkbro */}
+        <GoogleButton />
+        <noscript>
+          <div style={{ padding: '12px', backgroundColor: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: '12px', color: '#92400E', fontSize: '13px', textAlign: 'center', marginTop: '8px' }}>
+            Google sign-in requires JavaScript. Please use Email sign-in above.
+          </div>
+        </noscript>
       </div>
     </div>
   )
