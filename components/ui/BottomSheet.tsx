@@ -36,7 +36,7 @@ export default function BottomSheet({
 
       {/* Sheet */}
       <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#262626] rounded-t-2xl max-h-[70vh] flex flex-col"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        style={{ paddingBottom: 'calc(var(--bottom-nav-height, 56px) + env(safe-area-inset-bottom, 0px))' }}
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-2">

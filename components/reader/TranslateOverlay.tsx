@@ -34,7 +34,7 @@ export default function TranslateOverlay({
   const handleTranslateAll = useCallback(async () => {
     setLoading(true)
     setError('')
-    const results: TranslationResult[] = []
+
     const textsToTranslate = paragraphs
       .map((p) => getPlainText(p))
       .filter((t) => t.length > 10)
@@ -42,53 +42,39 @@ export default function TranslateOverlay({
     setTotal(textsToTranslate.length)
     setProgress(0)
 
-    let failCount = 0
+    try {
+      const batchPayload = textsToTranslate.map((text) => ({
+        text,
+        paragraph_hash: md5(text),
+      }))
 
-    for (let i = 0; i < textsToTranslate.length; i++) {
-      const text = textsToTranslate[i]
-      try {
-        const res = await fetch('/api/translate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            inbox_item_id: itemId,
-            text,
-            paragraph_hash: md5(text),
-          }),
-        })
+      const res = await fetch('/api/translate/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inbox_item_id: itemId,
+          paragraphs: batchPayload,
+        }),
+      })
 
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}))
-          console.error('Translate API error:', res.status, errData)
-          failCount++
-          results.push({ original: text, translated: '' })
-        } else {
-          const data = await res.json()
-          results.push({
-            original: text,
-            translated: data.translated_text || '',
-          })
-        }
-      } catch (err) {
-        console.error('Translate fetch error:', err)
-        failCount++
-        results.push({
-          original: text,
-          translated: '',
-        })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        console.error('Batch translate error:', res.status, errData)
+        setError('Translation failed. Please check your connection and try again.')
+        setLoading(false)
+        return
       }
-      setProgress(i + 1)
-    }
 
-    if (failCount === textsToTranslate.length) {
+      const data = await res.json()
+      setProgress(textsToTranslate.length)
+      onTranslated(data.translations)
+      setLoading(false)
+      onClose()
+    } catch (err) {
+      console.error('Translate fetch error:', err)
       setError('Translation failed. Please check your connection and try again.')
       setLoading(false)
-      return
     }
-
-    onTranslated(results)
-    setLoading(false)
-    onClose()
   }, [paragraphs, itemId, onTranslated, onClose])
 
   return (
