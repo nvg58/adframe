@@ -3,9 +3,8 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { splitHtmlIntoParagraphs } from '@/lib/utils'
+import { splitHtmlIntoParagraphs, md5 } from '@/lib/utils'
 import ReaderHeader from '@/components/reader/ReaderHeader'
-import ReaderContent from '@/components/reader/ReaderContent'
 import DisplaySettings from '@/components/reader/DisplaySettings'
 import TranslateOverlay from '@/components/reader/TranslateOverlay'
 
@@ -206,11 +205,11 @@ export default function ReaderView({ item }: { item: ItemData }) {
 
       {/* Article body */}
       <div className="max-w-2xl mx-auto px-5 pb-20">
-        {showTranslation && translations.length > 0 ? (
-          <BilingualView paragraphs={paragraphs} translations={translations} />
-        ) : (
-          <ReaderContent html={item.content} />
-        )}
+        <InteractiveContent
+          paragraphs={paragraphs}
+          itemId={item.id}
+          bulkTranslations={showTranslation ? translations : []}
+        />
       </div>
 
       {/* Bottom sheets */}
@@ -229,49 +228,129 @@ export default function ReaderView({ item }: { item: ItemData }) {
   )
 }
 
-// Bilingual view: original paragraphs interleaved with translations
-function BilingualView({
+// Helper to get plain text from HTML
+function getPlainText(html: string) {
+  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+// Interactive content: tap any paragraph to translate it individually
+function InteractiveContent({
   paragraphs,
-  translations,
+  itemId,
+  bulkTranslations,
 }: {
   paragraphs: string[]
-  translations: TranslationResult[]
+  itemId: string
+  bulkTranslations: TranslationResult[]
 }) {
-  // Build a map from plain text → translated text
-  const transMap = new Map<string, string>()
-  translations.forEach((t) => {
+  // Build bulk translation map
+  const bulkMap = new Map<string, string>()
+  bulkTranslations.forEach((t) => {
     if (t.translated) {
-      // Use first 60 chars as key for fuzzy matching
-      transMap.set(t.original.slice(0, 60), t.translated)
+      bulkMap.set(t.original.slice(0, 60), t.translated)
     }
   })
-
-  const getPlainText = (html: string) =>
-    html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 
   return (
     <div className="reader-content">
       {paragraphs.map((para, i) => {
         const plain = getPlainText(para)
-        const key = plain.slice(0, 60)
-        const translated = transMap.get(key)
+        const bulkTranslated = bulkMap.get(plain.slice(0, 60))
 
         return (
-          <div key={i} className="mb-6">
-            {/* Original paragraph */}
-            <div dangerouslySetInnerHTML={{ __html: para }} />
-
-            {/* Translation */}
-            {translated && (
-              <div className="mt-2 py-2 px-3 bg-amber-50 dark:bg-amber-900/30 border-l-4 border-amber-300 dark:border-amber-600 text-gray-600 dark:text-gray-300 italic text-sm rounded-r-lg"
-                style={{ fontFamily: "var(--font-reader)", lineHeight: '1.7' }}
-              >
-                {translated}
-              </div>
-            )}
-          </div>
+          <TappableParagraph
+            key={i}
+            html={para}
+            plainText={plain}
+            itemId={itemId}
+            bulkTranslation={bulkTranslated}
+          />
         )
       })}
+    </div>
+  )
+}
+
+// Single paragraph with tap-to-translate
+function TappableParagraph({
+  html,
+  plainText,
+  itemId,
+  bulkTranslation,
+}: {
+  html: string
+  plainText: string
+  itemId: string
+  bulkTranslation?: string
+}) {
+  const [translation, setTranslation] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [visible, setVisible] = useState(false)
+
+  // Use bulk translation if available
+  const displayText = bulkTranslation || translation
+
+  const handleTap = async () => {
+    // If already have translation, toggle visibility
+    if (displayText) {
+      setVisible(!visible)
+      return
+    }
+
+    // Skip very short paragraphs
+    if (plainText.length <= 10) return
+
+    setLoading(true)
+    try {
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inbox_item_id: itemId,
+          text: plainText,
+          paragraph_hash: md5(plainText),
+        }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setTranslation(data.translated_text || '')
+        setVisible(true)
+      }
+    } catch {
+      // Silent fail
+    }
+    setLoading(false)
+  }
+
+  // Auto-show bulk translations
+  const showTranslation = bulkTranslation ? true : visible
+
+  return (
+    <div className="mb-1">
+      {/* Paragraph - tappable */}
+      <div
+        onClick={handleTap}
+        className="cursor-pointer active:bg-gray-50 dark:active:bg-gray-800/50 rounded -mx-2 px-2 py-0.5"
+      >
+        <div dangerouslySetInnerHTML={{ __html: html }} />
+        {loading && (
+          <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+            Translating...
+          </span>
+        )}
+      </div>
+
+      {/* Translation block */}
+      {showTranslation && displayText && (
+        <div
+          onClick={() => { if (!bulkTranslation) setVisible(false) }}
+          className="mt-1 py-2 px-3 bg-amber-50 dark:bg-amber-900/30 border-l-4 border-amber-300 dark:border-amber-600 text-gray-600 dark:text-gray-300 italic text-sm rounded-r-lg cursor-pointer"
+          style={{ fontFamily: "var(--font-reader)", lineHeight: '1.7' }}
+        >
+          {displayText}
+        </div>
+      )}
     </div>
   )
 }
