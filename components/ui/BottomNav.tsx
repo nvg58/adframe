@@ -52,6 +52,11 @@ const tabs = [
 export default function BottomNav() {
   const pathname = usePathname()
 
+  // Hide on detail pages (e.g. /inbox/[id], /swipe/[id])
+  const segments = pathname.split('/').filter(Boolean)
+  if (segments.length >= 2 && segments[0] === 'inbox' && segments[1] !== 'new') return null
+  if (segments.length >= 2 && segments[0] === 'swipe' && segments[1] !== 'new') return null
+
   return (
     <nav
       style={{
