@@ -10,7 +10,10 @@ export async function translateText(text: string): Promise<string> {
     `${GOOGLE_TRANSLATE_URL}?key=${apiKey}`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://adframe.vercel.app',
+      },
       body: JSON.stringify({
         q: text,
         source: 'en',
