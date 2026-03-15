@@ -136,16 +136,16 @@ export default function LoginPage() {
               Check your email at <strong className="text-gray-900 dark:text-gray-100">{email}</strong>
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-              Enter the 6-digit code, or click the magic link in the email
+              Enter the 8-digit code, or click the magic link in the email
             </p>
             <input
               type="text"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
               required
-              maxLength={6}
+              maxLength={8}
               className="w-full px-4 py-3 text-2xl text-center tracking-widest bg-white dark:bg-[#262626] border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="000000"
+              placeholder="00000000"
             />
             <button
               type="submit"
