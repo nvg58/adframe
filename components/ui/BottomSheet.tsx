@@ -17,16 +17,21 @@ export default function BottomSheet({
 
   useEffect(() => {
     if (open) {
-      // Capture scroll position when opening
-      setScrollY(window.scrollY || window.pageYOffset || 0)
+      const y = window.scrollY || window.pageYOffset || 0
+      setScrollY(y)
       try { document.body.style.overflow = 'hidden' } catch {}
+      // Debug log
+      try {
+        const el = document.getElementById('adframe-debug')
+        if (el) el.textContent += `\n[BottomSheet] open=true scrollY=${y} title="${title}"`
+      } catch {}
     } else {
       try { document.body.style.overflow = '' } catch {}
     }
     return () => {
       try { document.body.style.overflow = '' } catch {}
     }
-  }, [open])
+  }, [open, title])
 
   if (!open) return null
 

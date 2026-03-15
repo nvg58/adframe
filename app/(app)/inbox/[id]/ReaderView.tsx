@@ -25,6 +25,21 @@ interface TranslationResult {
   translated: string
 }
 
+// Debug log helper — shows on screen for einkbro (no devtools)
+const debugLog: string[] = []
+function dbg(msg: string) {
+  const ts = new Date().toLocaleTimeString()
+  debugLog.push(`[${ts}] ${msg}`)
+  if (debugLog.length > 20) debugLog.shift()
+  // Force re-render via DOM (React state won't help if React is broken)
+  try {
+    const el = document.getElementById('adframe-debug')
+    if (el) {
+      el.textContent = debugLog.join('\n')
+    }
+  } catch {}
+}
+
 export default function ReaderView({ item }: { item: ItemData }) {
   const [showDisplaySettings, setShowDisplaySettings] = useState(false)
   const [showTranslateSheet, setShowTranslateSheet] = useState(false)
@@ -36,10 +51,15 @@ export default function ReaderView({ item }: { item: ItemData }) {
   const router = useRouter()
   const supabase = createClient()
 
+  // Log mount
+  useEffect(() => {
+    dbg(`ReaderView mounted. paragraphs=${splitHtmlIntoParagraphs(item.content).length}, UA=${navigator.userAgent?.slice(0, 80)}`)
+  }, [])
+
   // Catch unhandled JS errors and show them on screen (for einkbro debugging)
   useEffect(() => {
     const handler = (e: ErrorEvent) => {
-      // Auto-reload on chunk load failures (stale deployment cache)
+      dbg(`ERROR: ${e.message} at ${e.filename}:${e.lineno}`)
       if (e.message?.includes('Loading chunk') || e.message?.includes('ChunkLoadError')) {
         try { window.location.reload() } catch {}
         return
@@ -48,7 +68,7 @@ export default function ReaderView({ item }: { item: ItemData }) {
     }
     const rejectionHandler = (e: PromiseRejectionEvent) => {
       const msg = e.reason?.message || e.reason?.toString() || 'Unhandled promise rejection'
-      // Auto-reload on chunk load failures
+      dbg(`REJECTION: ${msg}`)
       if (msg?.includes('Loading chunk') || msg?.includes('ChunkLoadError')) {
         try { window.location.reload() } catch {}
         return
@@ -66,6 +86,7 @@ export default function ReaderView({ item }: { item: ItemData }) {
   const paragraphs = splitHtmlIntoParagraphs(item.content)
 
   const handleMarkAsRead = async () => {
+    dbg('handleMarkAsRead called')
     try {
       const res = await fetch(`/api/inbox/${item.id}/status`, {
         method: 'PATCH',
@@ -84,6 +105,7 @@ export default function ReaderView({ item }: { item: ItemData }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   const handleExport = async () => {
+    dbg('handleExport called')
     try {
       const res = await fetch(`/api/export?inbox_item_id=${item.id}`)
       const data = await res.json()
@@ -109,6 +131,7 @@ export default function ReaderView({ item }: { item: ItemData }) {
   }
 
   const handleDelete = async () => {
+    dbg('handleDelete called, confirmingDelete=' + confirmingDelete)
     if (!confirmingDelete) {
       setConfirmingDelete(true)
       return
@@ -136,10 +159,12 @@ export default function ReaderView({ item }: { item: ItemData }) {
   }, [])
 
   const handleTranslateClick = () => {
+    dbg('handleTranslateClick called, translations.length=' + translations.length)
     if (translations.length > 0) {
       setShowTranslation(!showTranslation)
     } else {
       setShowTranslateSheet(true)
+      dbg('setShowTranslateSheet(true)')
     }
   }
 
@@ -170,7 +195,7 @@ export default function ReaderView({ item }: { item: ItemData }) {
           <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
         </svg>
       ),
-      onClick: () => setShowDisplaySettings(true),
+      onClick: () => { dbg('Display Settings clicked'); setShowDisplaySettings(true) },
     },
     {
       label: exportStatus === 'copied' ? 'Copied!' : exportStatus === 'failed' ? 'Copy failed' : 'Export for Claude',
@@ -294,6 +319,21 @@ export default function ReaderView({ item }: { item: ItemData }) {
         onClose={() => setShowTranslateSheet(false)}
         onTranslated={handleTranslated}
       />
+
+      {/* Debug panel — visible on einkbro for troubleshooting */}
+      <div style={{
+        position: 'relative', margin: '20px 10px', padding: '10px',
+        backgroundColor: '#f0f0f0', border: '1px solid #ccc',
+        borderRadius: '8px', fontSize: '10px', fontFamily: 'monospace',
+        lineHeight: '1.4', wordBreak: 'break-all',
+      }}>
+        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+          Debug Log | showDisplaySettings={String(showDisplaySettings)} | showTranslateSheet={String(showTranslateSheet)}
+        </div>
+        <pre id="adframe-debug" style={{ margin: 0, whiteSpace: 'pre-wrap', maxHeight: '200px', overflow: 'auto' }}>
+          {debugLog.join('\n') || '(no logs yet)'}
+        </pre>
+      </div>
     </div>
   )
 }

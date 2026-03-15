@@ -83,7 +83,14 @@ export default function ReaderHeader({
         {menuItems.length > 0 && (
           <div className="relative" ref={menuRef}>
             <button
-              onClick={() => setMenuOpen(!menuOpen)}
+              onClick={() => {
+                const next = !menuOpen
+                setMenuOpen(next)
+                try {
+                  const el = document.getElementById('adframe-debug')
+                  if (el) el.textContent += `\n[Menu] toggled to ${next}`
+                } catch {}
+              }}
               className="flex items-center justify-center w-10 h-10 -mr-2 text-gray-700 dark:text-gray-300"
               aria-label="Menu"
             >
@@ -101,6 +108,10 @@ export default function ReaderHeader({
                   <button
                     key={i}
                     onClick={() => {
+                      try {
+                        const el = document.getElementById('adframe-debug')
+                        if (el) el.textContent += `\n[Menu] item clicked: "${item.label}"`
+                      } catch {}
                       setMenuOpen(false)
                       item.onClick()
                     }}
