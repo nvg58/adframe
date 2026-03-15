@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -39,9 +39,10 @@ export default function InboxList({
   const [search, setSearch] = useState(currentQuery)
   const [status, setStatus] = useState(currentStatus)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [localItems, setLocalItems] = useState(items)
+  // Track deleted IDs instead of copying items into state
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
   const router = useRouter()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.preventDefault()
@@ -49,12 +50,12 @@ export default function InboxList({
     if (!confirm('Delete this article?')) return
     setDeletingId(id)
     try {
-      const { error } = await supabase
+      const { error } = await supabaseRef.current
         .from('inbox_items')
         .delete()
         .eq('id', id)
       if (!error) {
-        setLocalItems((prev) => prev.filter((item) => item.id !== id))
+        setDeletedIds((prev) => new Set(prev).add(id))
       } else {
         alert('Failed to delete')
       }
@@ -72,16 +73,20 @@ export default function InboxList({
     router.push(`/inbox${params.toString() ? '?' + params.toString() : ''}`)
   }
 
+  // Use items prop directly (stays in sync with server), minus deleted ones
   const filtered = useMemo(() => {
-    if (!search) return localItems
-    const q = search.toLowerCase()
-    return localItems.filter(
-      (item) =>
-        item.title.toLowerCase().includes(q) ||
-        item.source_author?.toLowerCase().includes(q) ||
-        item.tags.some((t) => t.toLowerCase().includes(q))
-    )
-  }, [localItems, search])
+    let result = items.filter((item) => !deletedIds.has(item.id))
+    if (search) {
+      const q = search.toLowerCase()
+      result = result.filter(
+        (item) =>
+          item.title.toLowerCase().includes(q) ||
+          item.source_author?.toLowerCase().includes(q) ||
+          item.tags.some((t) => t.toLowerCase().includes(q))
+      )
+    }
+    return result
+  }, [items, search, deletedIds])
 
   return (
     <div className="px-4 pt-4">

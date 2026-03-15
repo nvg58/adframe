@@ -3,7 +3,7 @@
   "name": "Adframe — Skool Clipper",
   "version": "1.0",
   "description": "Clip lessons from Skool to your Second Brain",
-  "permissions": ["activeTab", "storage", "scripting", "identity", "sidePanel"],
+  "permissions": ["activeTab", "tabs", "storage", "scripting", "identity", "sidePanel"],
   "host_permissions": ["https://*.skool.com/*", "<all_urls>"],
   "side_panel": {
     "default_path": "sidepanel.html"

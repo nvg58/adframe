@@ -23,6 +23,8 @@ const submitBtn = document.getElementById('submitBtn');
 const clipAnotherBtn = document.getElementById('clipAnotherBtn');
 const formError = document.getElementById('formError');
 const extractError = document.getElementById('extractError');
+const reloadBtn = document.getElementById('reloadBtn');
+const pageStatus = document.getElementById('pageStatus');
 
 // View management
 function showView(view) {
@@ -252,6 +254,32 @@ submitBtn.addEventListener('click', async () => {
 
   submitBtn.disabled = false;
   submitBtn.textContent = 'Send to Inbox';
+});
+
+// Reload button — re-extract content from current page
+reloadBtn.addEventListener('click', () => {
+  pageStatus.style.display = 'none';
+  extractContent();
+});
+
+// Auto-detect new page loads and tab switches
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status === 'complete' && session) {
+    // Check if this is the active tab
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0] && tabs[0].id === tabId) {
+        pageStatus.textContent = '● New page detected';
+        pageStatus.style.display = 'inline';
+      }
+    });
+  }
+});
+
+chrome.tabs.onActivated.addListener(() => {
+  if (session) {
+    pageStatus.textContent = '● Tab changed';
+    pageStatus.style.display = 'inline';
+  }
 });
 
 // Clip another

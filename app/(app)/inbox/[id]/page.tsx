@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { formatDate, splitHtmlIntoParagraphs, md5, stripHtml } from '@/lib/utils'
 import { translateText } from '@/lib/translate'
 import { markAsRead, deleteItem } from './actions'
+import FontSizeControls from './FontSizeControls'
 
 export default async function InboxReaderPage({
   params,
@@ -123,6 +124,12 @@ export default async function InboxReaderPage({
 
         {/* Right-side actions */}
         <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+          {/* Font size controls (client component) */}
+          <FontSizeControls />
+
+          {/* Separator */}
+          <div style={{ width: '1px', height: '20px', backgroundColor: '#e5e7eb', margin: '0 4px' }} />
+
           {/* Translate */}
           <a
             href={showTranslation ? `/inbox/${item.id}` : `/inbox/${item.id}?translate=true`}
@@ -266,8 +273,8 @@ export default async function InboxReaderPage({
           margin: '0 auto 32px',
         }} />
 
-        {/* Article body */}
-        <div className="reader-content">
+        {/* Article body — font size controlled via CSS variable from FontSizeControls */}
+        <div className="reader-content" style={{ fontSize: 'var(--reader-font-size, 16px)', lineHeight: 1.8 }}>
           {paragraphs.map((para, i) => (
             <div key={i}>
               <div dangerouslySetInnerHTML={{ __html: para }} style={{ marginBottom: '4px' }} />
