@@ -1,7 +1,31 @@
 import { createClient } from '@/lib/supabase/server'
+import { translateText } from '@/lib/translate'
 import { NextResponse } from 'next/server'
 
-const GOOGLE_TRANSLATE_URL = 'https://translation.googleapis.com/language/translate/v2'
+// Allow longer execution on Vercel
+export const maxDuration = 30
+
+// Concurrency limit to avoid rate limiting
+const CONCURRENCY = 5
+
+async function translateWithConcurrency(
+  texts: string[],
+  concurrency: number
+): Promise<string[]> {
+  const results: string[] = new Array(texts.length)
+
+  for (let i = 0; i < texts.length; i += concurrency) {
+    const batch = texts.slice(i, i + concurrency)
+    const batchResults = await Promise.all(
+      batch.map((text) => translateText(text))
+    )
+    batchResults.forEach((result, j) => {
+      results[i + j] = result
+    })
+  }
+
+  return results
+}
 
 export async function POST(request: Request) {
   const supabase = createClient()
@@ -14,7 +38,6 @@ export async function POST(request: Request) {
   }
 
   const { inbox_item_id, paragraphs } = await request.json()
-  // paragraphs: Array<{ text: string, paragraph_hash: string }>
 
   if (!inbox_item_id || !paragraphs || !Array.isArray(paragraphs) || paragraphs.length === 0) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -39,40 +62,17 @@ export async function POST(request: Request) {
       (p: { paragraph_hash: string }) => !cacheMap.has(p.paragraph_hash)
     )
 
-    // 3. Batch translate uncached paragraphs via Google Translate
+    // 3. Translate uncached paragraphs (5 at a time in parallel)
     if (uncached.length > 0) {
       const textsToTranslate = uncached.map((p: { text: string }) => p.text)
-
-      // Google Translate API supports multiple q parameters
-      const response = await fetch(
-        `${GOOGLE_TRANSLATE_URL}?key=${process.env.GOOGLE_TRANSLATE_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            q: textsToTranslate,
-            source: 'en',
-            target: 'vi',
-            format: 'text',
-          }),
-        }
-      )
-
-      if (!response.ok) {
-        const errText = await response.text()
-        console.error('Google Translate API error:', response.status, errText)
-        return NextResponse.json({ error: 'Translation API failed' }, { status: 502 })
-      }
-
-      const data = await response.json()
-      const translations = data.data.translations
+      const translated = await translateWithConcurrency(textsToTranslate, CONCURRENCY)
 
       // 4. Cache all new translations in one batch
       const toInsert = uncached.map((p: { text: string; paragraph_hash: string }, i: number) => ({
         inbox_item_id,
         paragraph_hash: p.paragraph_hash,
         original_text: p.text,
-        translated_text: translations[i].translatedText,
+        translated_text: translated[i],
       }))
 
       await supabase
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
 
       // Add to cache map
       uncached.forEach((p: { paragraph_hash: string }, i: number) => {
-        cacheMap.set(p.paragraph_hash, translations[i].translatedText)
+        cacheMap.set(p.paragraph_hash, translated[i])
       })
     }
 
@@ -94,6 +94,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ translations: results })
   } catch (err) {
     console.error('Batch translate error:', err)
-    return NextResponse.json({ error: 'Translation failed' }, { status: 500 })
+    const message = err instanceof Error ? err.message : 'Translation failed'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

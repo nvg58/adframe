@@ -58,9 +58,9 @@ export default function TranslateOverlay({
       })
 
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}))
+        const errData = await res.json().catch(() => ({ error: 'Unknown error' }))
         console.error('Batch translate error:', res.status, errData)
-        setError('Translation failed. Please check your connection and try again.')
+        setError(errData.error || 'Translation failed. Please try again.')
         setLoading(false)
         return
       }
