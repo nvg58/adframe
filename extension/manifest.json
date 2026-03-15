@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Adframe — Skool Clipper",
+  "version": "1.0",
+  "description": "Clip lessons from Skool to your Second Brain",
+  "permissions": ["activeTab", "storage", "scripting", "identity", "sidePanel"],
+  "host_permissions": ["https://*.skool.com/*", "<all_urls>"],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_icon": "icon.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "oauth2": {
+    "client_id": "30884900783-dds1s4450ie46j67gb77tn46rqnaff3t.apps.googleusercontent.com",
+    "scopes": ["openid", "email", "profile"]
+  },
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["lib/Readability.js", "content.js"]
+  }]
+}

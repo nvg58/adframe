@@ -2,26 +2,176 @@
 @tailwind components;
 @tailwind utilities;
 
+/* === CSS Custom Properties === */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-reader: var(--font-bookerly), Georgia, 'Times New Roman', serif;
+  --color-bg: #FFFFFF;
+  --color-text: #111111;
+  --color-text-secondary: #6B7280;
+  --color-border: #E5E7EB;
+  --color-surface: #F9FAFB;
+  --color-accent: #2563EB;
+  --reader-font-size: 18px;
+  --reader-line-height: 1.8;
+  --bottom-nav-height: 56px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* === Dark theme === */
+html.dark {
+  --color-bg: #1a1a1a;
+  --color-text: #e0e0e0;
+  --color-text-secondary: #9CA3AF;
+  --color-border: #374151;
+  --color-surface: #262626;
 }
 
+/* === Base styles === */
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+/* === Reader content styles === */
+.reader-content {
+  font-family: var(--font-reader);
+  font-size: var(--reader-font-size);
+  line-height: var(--reader-line-height);
+  text-align: justify;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  word-break: break-word;
+}
+
+.reader-content p {
+  text-indent: 1.5em;
+  margin-bottom: 0.75em;
+}
+
+.reader-content > p:first-child,
+.reader-content h1 + p,
+.reader-content h2 + p,
+.reader-content h3 + p,
+.reader-content hr + p,
+.reader-content blockquote + p {
+  text-indent: 0;
+}
+
+.reader-content h1 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 1.2em 0 0.5em;
+  line-height: 1.3;
+  text-indent: 0;
+  text-align: left;
+}
+
+.reader-content h2 {
+  font-size: 1.3em;
+  font-weight: bold;
+  margin: 1em 0 0.4em;
+  line-height: 1.3;
+  text-indent: 0;
+  text-align: left;
+}
+
+.reader-content h3 {
+  font-size: 1.15em;
+  font-weight: bold;
+  margin: 0.9em 0 0.3em;
+  line-height: 1.4;
+  text-indent: 0;
+  text-align: left;
+}
+
+.reader-content strong, .reader-content b {
+  font-weight: bold;
+}
+
+.reader-content em, .reader-content i {
+  font-style: italic;
+}
+
+.reader-content blockquote {
+  border-left: 3px solid var(--color-border);
+  padding-left: 1em;
+  margin: 1em 0;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.reader-content blockquote p {
+  text-indent: 0;
+  margin-bottom: 0.4em;
+}
+
+.reader-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.reader-content ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.reader-content li {
+  margin-bottom: 0.4em;
+  line-height: 1.6;
+  text-indent: 0;
+}
+
+.reader-content a {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.reader-content hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 1.5em auto;
+  width: 40%;
+}
+
+.reader-content .mention {
+  font-weight: 600;
+}
+
+.reader-content img {
+  max-width: 100%;
+  height: auto;
+  margin: 0.75em 0;
+  border-radius: 8px;
+}
+
+.reader-content pre {
+  background: var(--color-surface);
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 0.85em;
+  margin: 0.75em 0;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+.reader-content code {
+  background: var(--color-surface);
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+/* === Utility classes === */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.pb-safe-nav {
+  padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 16px));
 }
