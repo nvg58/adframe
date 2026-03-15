@@ -4,6 +4,7 @@ import { formatDate, splitHtmlIntoParagraphs, md5, stripHtml } from '@/lib/utils
 import { translateText } from '@/lib/translate'
 import { markAsRead, deleteItem } from './actions'
 import FontSizeControls from './FontSizeControls'
+import AutoMarkRead from './AutoMarkRead'
 
 export default async function InboxReaderPage({
   params,
@@ -91,10 +92,10 @@ export default async function InboxReaderPage({
     ].filter(Boolean).join('\n')
   }
 
-  /* Icon button — 44px touch target, 24px icon */
+  /* Icon button — 40px touch target, 20px icon */
   const iconBtn = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    width: '44px', height: '44px',
+    width: '40px', height: '40px',
     border: 'none', borderRadius: '8px',
     backgroundColor: 'transparent', color: '#6b7280',
     cursor: 'pointer', textDecoration: 'none',
@@ -112,12 +113,12 @@ export default async function InboxReaderPage({
       <header style={{
         position: 'sticky', top: 0, zIndex: 10,
         backgroundColor: '#fff', borderBottom: '1px solid #e5e7eb',
-        padding: '0 6px', height: '56px',
+        padding: '0 6px', height: '48px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         {/* Back */}
         <a href="/inbox" style={iconBtn} title="Back">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </a>
@@ -136,7 +137,7 @@ export default async function InboxReaderPage({
             style={showTranslation ? iconBtnActive : iconBtn}
             title={showTranslation ? 'Hide Translation' : 'Translate'}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 8l6 6" />
               <path d="M4 14l6-6 2-3" />
               <path d="M2 5h12" />
@@ -152,7 +153,7 @@ export default async function InboxReaderPage({
             style={showExport ? iconBtnActive : iconBtn}
             title="Export for Claude"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
@@ -168,7 +169,7 @@ export default async function InboxReaderPage({
               style={item.status === 'read' ? iconBtnActive : iconBtn}
               title={item.status === 'read' ? 'Mark as Unread' : 'Mark as Read'}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 {item.status === 'read' ? (
                   <>
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
@@ -188,7 +189,7 @@ export default async function InboxReaderPage({
           <form action={deleteItem} style={{ margin: 0 }}>
             <input type="hidden" name="id" value={item.id} />
             <button type="submit" style={{ ...iconBtn, color: '#ef4444' }} title="Delete">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                 <path d="M10 11v6" />
@@ -292,6 +293,11 @@ export default async function InboxReaderPage({
             </div>
           ))}
         </div>
+
+        {/* Auto mark as read when user scrolls to end */}
+        {item.status === 'unread' && (
+          <AutoMarkRead itemId={item.id} />
+        )}
       </article>
     </div>
   )
