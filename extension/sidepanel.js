@@ -73,6 +73,37 @@ const formError = document.getElementById('formError');
 const extractError = document.getElementById('extractError');
 const reloadBtn = document.getElementById('reloadBtn');
 const pageStatus = document.getElementById('pageStatus');
+const contentFormatBadge = document.getElementById('contentFormatBadge');
+
+// Store HTML content from paste or extraction separately
+let richContent = null;
+
+// Intercept paste on content textarea to capture HTML
+contentInput.addEventListener('paste', (e) => {
+  const html = e.clipboardData.getData('text/html');
+  if (html && html.trim().length > 0) {
+    // Clean up the HTML: remove Google Docs wrapper cruft, keep formatting
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    // Remove style tags and meta
+    doc.querySelectorAll('style, meta, link, script').forEach(el => el.remove());
+    const cleaned = doc.body.innerHTML.trim();
+    if (cleaned.length > 20) {
+      richContent = cleaned;
+      contentFormatBadge.style.display = 'inline';
+    }
+  }
+});
+
+// Clear rich content when user manually types
+contentInput.addEventListener('input', () => {
+  // If user edits after paste, invalidate rich content
+  // (only if they're actually typing, not from our programmatic fill)
+  if (richContent && document.activeElement === contentInput) {
+    richContent = null;
+    contentFormatBadge.style.display = 'none';
+  }
+});
 
 // View management
 function showView(view) {
@@ -212,7 +243,20 @@ async function extractContent() {
     if (response && response.success) {
       titleInput.value = response.title || '';
       urlInput.value = response.url || '';
-      contentInput.value = response.content || '';
+      // If content contains HTML tags, store as rich content
+      const content = response.content || '';
+      if (/<[a-z][\s\S]*>/i.test(content)) {
+        richContent = content;
+        // Show plain text in textarea for user to see
+        const tmp = document.createElement('div');
+        tmp.innerHTML = content;
+        contentInput.value = tmp.textContent || tmp.innerText || '';
+        contentFormatBadge.style.display = 'inline';
+      } else {
+        richContent = null;
+        contentInput.value = content;
+        contentFormatBadge.style.display = 'none';
+      }
     } else {
       extractError.textContent = response?.error || 'Could not extract page content.';
       extractError.style.display = 'block';
@@ -294,7 +338,7 @@ submitBtn.addEventListener('click', async () => {
       },
       body: JSON.stringify({
         title,
-        content,
+        content: richContent || content,
         source_url: urlInput.value || null,
         source_author: null,
         tags,
@@ -308,6 +352,8 @@ submitBtn.addEventListener('click', async () => {
       titleInput.value = '';
       urlInput.value = '';
       contentInput.value = '';
+      richContent = null;
+      contentFormatBadge.style.display = 'none';
       tags = [];
       renderTags();
     } else {
