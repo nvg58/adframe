@@ -101,9 +101,9 @@ export default function ReadingProgress({ wordCount }: { wordCount: number }) {
 
   return (
     <div style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20,
-      backgroundColor: '#fff', borderTop: '1px solid #f3f4f6',
-      padding: '6px 16px 8px',
+      maxWidth: '640px', margin: '0 auto',
+      padding: '12px 20px 16px',
+      borderTop: '1px solid #f3f4f6',
     }}>
       {/* Progress bar */}
       <div style={{
