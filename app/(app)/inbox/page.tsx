@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/utils'
 import { deleteInboxItem } from './actions'
+import ItemProgress from './ItemProgress'
 
 export default async function InboxPage({
   searchParams,
@@ -174,6 +175,7 @@ export default async function InboxPage({
                     {item.source_author && <span>&middot;</span>}
                     <span>{item.created_at}</span>
                   </div>
+                  <ItemProgress itemId={item.id} />
                   {item.tags.length > 0 && (
                     <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
                       {item.tags.slice(0, 3).map((tag) => (
