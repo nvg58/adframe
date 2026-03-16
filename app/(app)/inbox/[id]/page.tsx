@@ -306,7 +306,7 @@ export default async function InboxReaderPage({
       </article>
 
       {/* Kindle-style reading progress */}
-      <ReadingProgress wordCount={wordCount} itemId={item.id} />
+      <ReadingProgress wordCount={wordCount} itemId={item.id} initialProgress={item.reading_progress || 0} />
     </div>
   )
 }

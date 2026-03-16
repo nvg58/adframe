@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/utils'
 import { deleteInboxItem } from './actions'
-import ItemProgress from './ItemProgress'
 
 export default async function InboxPage({
   searchParams,
@@ -35,6 +34,7 @@ export default async function InboxPage({
     source_author: item.source_author,
     tags: (item.tags || []) as string[],
     status: item.status as string,
+    reading_progress: (item.reading_progress || 0) as number,
     created_at: formatDate(item.created_at),
   }))
 
@@ -209,7 +209,23 @@ export default async function InboxPage({
                     {item.source_author && <span>&middot;</span>}
                     <span>{item.created_at}</span>
                   </div>
-                  <ItemProgress itemId={item.id} />
+                  {item.reading_progress > 0 && item.reading_progress < 100 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+                      <div style={{
+                        flex: 1, height: '3px', backgroundColor: '#e5e7eb',
+                        borderRadius: '2px', overflow: 'hidden', maxWidth: '80px',
+                      }}>
+                        <div style={{
+                          height: '100%', borderRadius: '2px',
+                          backgroundColor: '#6b7280',
+                          width: `${item.reading_progress}%`,
+                        }} />
+                      </div>
+                      <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 500 }}>
+                        {item.reading_progress}%
+                      </span>
+                    </div>
+                  )}
                   {item.tags.length > 0 && (
                     <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
                       {item.tags.slice(0, 3).map((tag) => (
