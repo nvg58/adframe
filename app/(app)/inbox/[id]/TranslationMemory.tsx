@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 const KEY_PREFIX = 'adframe-translate-'
 
@@ -11,22 +11,26 @@ export default function TranslationMemory({
   itemId: string
   isOn: boolean
 }) {
-  useEffect(() => {
-    // Save current translation state
-    try {
-      localStorage.setItem(KEY_PREFIX + itemId, isOn ? '1' : '0')
-    } catch {}
-  }, [itemId, isOn])
+  const checkedRef = useRef(false)
 
   useEffect(() => {
-    // On mount, if saved state differs from URL, redirect
+    // On first mount, check if we should redirect to enable translation
+    if (checkedRef.current) return
+    checkedRef.current = true
+
     try {
       const saved = localStorage.getItem(KEY_PREFIX + itemId)
       if (saved === '1' && !isOn) {
         window.location.replace(`/inbox/${itemId}?translate=true`)
+        return // Don't save — we're redirecting
       }
     } catch {}
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Save current state only after redirect check
+    try {
+      localStorage.setItem(KEY_PREFIX + itemId, isOn ? '1' : '0')
+    } catch {}
+  }, [itemId, isOn])
 
   return null
 }
