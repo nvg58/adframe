@@ -6,6 +6,54 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 let session = null;
 let tags = [];
 
+// Refresh Supabase session if access token is expired or about to expire
+async function ensureValidSession() {
+  if (!session || !session.access_token) return false;
+
+  // Check if token expires within next 60 seconds
+  const expiresAt = session.expires_at; // unix timestamp in seconds
+  const now = Math.floor(Date.now() / 1000);
+
+  if (expiresAt && now < expiresAt - 60) {
+    return true; // Token still valid
+  }
+
+  // Try to refresh using refresh_token
+  if (!session.refresh_token) {
+    console.log('No refresh token, need re-login');
+    return false;
+  }
+
+  try {
+    console.log('Refreshing Supabase session...');
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        refresh_token: session.refresh_token,
+      }),
+    });
+
+    const data = await res.json();
+    if (data.access_token) {
+      session = data;
+      await chrome.storage.local.set({ session });
+      console.log('Session refreshed successfully');
+      return true;
+    } else {
+      console.error('Refresh failed:', data);
+      return false;
+    }
+  } catch (err) {
+    console.error('Refresh error:', err);
+    return false;
+  }
+}
+
 // Elements
 const loginView = document.getElementById('loginView');
 const formView = document.getElementById('formView');
@@ -39,9 +87,18 @@ async function init() {
   const stored = await chrome.storage.local.get('session');
   if (stored.session) {
     session = stored.session;
-    showView(formView);
-    userEmail.textContent = session.user?.email || '';
-    extractContent();
+    // Try to refresh if expired
+    const valid = await ensureValidSession();
+    if (valid) {
+      showView(formView);
+      userEmail.textContent = session.user?.email || '';
+      extractContent();
+    } else {
+      // Token expired and refresh failed — re-login
+      session = null;
+      await chrome.storage.local.remove('session');
+      showView(loginView);
+    }
   } else {
     showView(loginView);
   }
@@ -219,6 +276,16 @@ submitBtn.addEventListener('click', async () => {
   submitBtn.textContent = 'Sending...';
 
   try {
+    // Ensure token is valid before sending
+    const valid = await ensureValidSession();
+    if (!valid) {
+      formError.textContent = 'Session expired. Please log out and log in again.';
+      formError.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send to Inbox';
+      return;
+    }
+
     const res = await fetch(`${API_BASE}/api/inbox`, {
       method: 'POST',
       headers: {
