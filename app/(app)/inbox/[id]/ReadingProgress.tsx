@@ -123,25 +123,26 @@ export default function ReadingProgress({ wordCount, itemId }: { wordCount: numb
       backgroundColor: '#fff', borderTop: '1px solid #e5e7eb',
       padding: '6px 16px 8px',
     }}>
-      {/* Progress bar */}
-      <div style={{
-        height: '3px', backgroundColor: '#e5e7eb', borderRadius: '2px',
-        overflow: 'hidden', marginBottom: '4px',
-      }}>
-        <div style={{
-          height: '100%', backgroundColor: '#6b7280', borderRadius: '2px',
-          width: `${progress}%`,
-        }} />
-      </div>
       {/* Labels */}
       <div style={{
         display: 'flex', justifyContent: 'space-between',
         fontSize: '11px', color: '#9ca3af', lineHeight: 1,
+        marginBottom: '4px',
       }}>
         <span>{progress}%</span>
         <span>
           {minutesLeft === 0 ? 'Done' : `${minutesLeft} min left`}
         </span>
+      </div>
+      {/* Progress bar */}
+      <div style={{
+        height: '3px', backgroundColor: '#e5e7eb', borderRadius: '2px',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          height: '100%', backgroundColor: '#6b7280', borderRadius: '2px',
+          width: `${progress}%`,
+        }} />
       </div>
     </div>
   )
