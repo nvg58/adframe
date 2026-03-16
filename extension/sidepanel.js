@@ -78,30 +78,30 @@ const contentFormatBadge = document.getElementById('contentFormatBadge');
 // Store HTML content from paste or extraction separately
 let richContent = null;
 
-// Intercept paste on content textarea to capture HTML
+// Intercept paste on contenteditable to capture clean HTML
 contentInput.addEventListener('paste', (e) => {
   const html = e.clipboardData.getData('text/html');
   if (html && html.trim().length > 0) {
+    e.preventDefault();
     // Clean up the HTML: remove Google Docs wrapper cruft, keep formatting
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
-    // Remove style tags and meta
+    // Remove style tags, meta, script, and inline styles
     doc.querySelectorAll('style, meta, link, script').forEach(el => el.remove());
+    // Remove all inline styles but keep structural tags
+    doc.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
+    doc.querySelectorAll('[class]').forEach(el => el.removeAttribute('class'));
+    doc.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
     const cleaned = doc.body.innerHTML.trim();
     if (cleaned.length > 20) {
       richContent = cleaned;
+      contentInput.innerHTML = cleaned;
       contentFormatBadge.style.display = 'inline';
+    } else {
+      // Fallback to plain text
+      const text = e.clipboardData.getData('text/plain');
+      document.execCommand('insertText', false, text);
     }
-  }
-});
-
-// Clear rich content when user manually types
-contentInput.addEventListener('input', () => {
-  // If user edits after paste, invalidate rich content
-  // (only if they're actually typing, not from our programmatic fill)
-  if (richContent && document.activeElement === contentInput) {
-    richContent = null;
-    contentFormatBadge.style.display = 'none';
   }
 });
 
@@ -243,18 +243,14 @@ async function extractContent() {
     if (response && response.success) {
       titleInput.value = response.title || '';
       urlInput.value = response.url || '';
-      // If content contains HTML tags, store as rich content
       const content = response.content || '';
       if (/<[a-z][\s\S]*>/i.test(content)) {
         richContent = content;
-        // Show plain text in textarea for user to see
-        const tmp = document.createElement('div');
-        tmp.innerHTML = content;
-        contentInput.value = tmp.textContent || tmp.innerText || '';
+        contentInput.innerHTML = content;
         contentFormatBadge.style.display = 'inline';
       } else {
         richContent = null;
-        contentInput.value = content;
+        contentInput.innerText = content;
         contentFormatBadge.style.display = 'none';
       }
     } else {
@@ -308,7 +304,7 @@ tagInput.addEventListener('keydown', (e) => {
 submitBtn.addEventListener('click', async () => {
   formError.style.display = 'none';
   const title = titleInput.value.trim();
-  const content = contentInput.value.trim();
+  const content = contentInput.innerText.trim();
 
   if (!title || !content) {
     formError.textContent = 'Title and Content are required.';
@@ -351,7 +347,7 @@ submitBtn.addEventListener('click', async () => {
       // Reset form
       titleInput.value = '';
       urlInput.value = '';
-      contentInput.value = '';
+      contentInput.innerHTML = '';
       richContent = null;
       contentFormatBadge.style.display = 'none';
       tags = [];
