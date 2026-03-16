@@ -21,7 +21,10 @@ export default function TranslationMemory({
     try {
       const saved = localStorage.getItem(KEY_PREFIX + itemId)
       if (saved === '1' && !isOn) {
-        window.location.replace(`/inbox/${itemId}?translate=true`)
+        // Preserve existing search params (like ?export=true)
+        const url = new URL(window.location.href)
+        url.searchParams.set('translate', 'true')
+        window.location.replace(url.toString())
         return // Don't save — we're redirecting
       }
     } catch {}

@@ -138,7 +138,9 @@ export default async function InboxReaderPage({
 
           {/* Translate */}
           <a
-            href={showTranslation ? `/inbox/${item.id}` : `/inbox/${item.id}?translate=true`}
+            href={showTranslation
+              ? `/inbox/${item.id}${showExport ? '?export=true' : ''}`
+              : `/inbox/${item.id}?translate=true${showExport ? '&export=true' : ''}`}
             style={showTranslation ? iconBtnActive : iconBtn}
             title={showTranslation ? 'Hide Translation' : 'Translate'}
           >
@@ -154,7 +156,9 @@ export default async function InboxReaderPage({
 
           {/* Export */}
           <a
-            href={showExport ? `/inbox/${item.id}` : `/inbox/${item.id}?export=true`}
+            href={showExport
+              ? `/inbox/${item.id}${showTranslation ? '?translate=true' : ''}`
+              : `/inbox/${item.id}?export=true${showTranslation ? '&translate=true' : ''}`}
             style={showExport ? iconBtnActive : iconBtn}
             title="Export for Claude"
           >
