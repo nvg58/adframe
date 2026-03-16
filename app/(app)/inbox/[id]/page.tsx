@@ -5,6 +5,7 @@ import { translateText } from '@/lib/translate'
 import { markAsRead, deleteItem } from './actions'
 import FontSizeControls from './FontSizeControls'
 import AutoMarkRead from './AutoMarkRead'
+import ReadingProgress from './ReadingProgress'
 
 export default async function InboxReaderPage({
   params,
@@ -25,6 +26,7 @@ export default async function InboxReaderPage({
   }
 
   const paragraphs = splitHtmlIntoParagraphs(item.content)
+  const wordCount = stripHtml(item.content).split(/\s+/).filter(Boolean).length
   const showTranslation = searchParams.translate === 'true'
   const showExport = searchParams.export === 'true'
 
@@ -239,7 +241,7 @@ export default async function InboxReaderPage({
       )}
 
       {/* Article */}
-      <article style={{ maxWidth: '640px', margin: '0 auto', padding: '32px 20px 40px' }}>
+      <article style={{ maxWidth: '640px', margin: '0 auto', padding: '32px 20px 60px' }}>
         {/* Tags */}
         {item.tags && item.tags.length > 0 && (
           <p style={{
@@ -299,6 +301,9 @@ export default async function InboxReaderPage({
           <AutoMarkRead itemId={item.id} />
         )}
       </article>
+
+      {/* Kindle-style reading progress */}
+      <ReadingProgress wordCount={wordCount} />
     </div>
   )
 }
