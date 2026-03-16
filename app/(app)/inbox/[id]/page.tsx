@@ -6,6 +6,7 @@ import { markAsRead, deleteItem } from './actions'
 import FontSizeControls from './FontSizeControls'
 import AutoMarkRead from './AutoMarkRead'
 import ReadingProgress from './ReadingProgress'
+import TranslationMemory from './TranslationMemory'
 
 export default async function InboxReaderPage({
   params,
@@ -111,6 +112,8 @@ export default async function InboxReaderPage({
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
+      {/* Remember translation state per item */}
+      <TranslationMemory itemId={item.id} isOn={showTranslation} />
       {/* Header — single row, bigger buttons */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 10,
