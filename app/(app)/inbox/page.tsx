@@ -6,13 +6,14 @@ import ItemProgress from './ItemProgress'
 export default async function InboxPage({
   searchParams,
 }: {
-  searchParams: { status?: string; q?: string; tag?: string }
+  searchParams: { status?: string; q?: string; tag?: string; sort?: string }
 }) {
   const supabase = createClient()
+  const currentSort = searchParams.sort || 'newest'
   let query = supabase
     .from('inbox_items')
     .select('*')
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: currentSort === 'oldest' })
 
   const currentStatus = searchParams.status || ''
   const currentQuery = searchParams.q || ''
@@ -48,13 +49,17 @@ export default async function InboxPage({
   }
 
   // Build filter URLs
-  const filterUrl = (status: string) => {
+  const buildUrl = (overrides: { status?: string; sort?: string }) => {
     const params = new URLSearchParams()
+    const status = overrides.status !== undefined ? overrides.status : currentStatus
+    const sort = overrides.sort !== undefined ? overrides.sort : currentSort
     if (status) params.set('status', status)
     if (currentQuery) params.set('q', currentQuery)
+    if (sort && sort !== 'newest') params.set('sort', sort)
     const qs = params.toString()
     return `/inbox${qs ? '?' + qs : ''}`
   }
+  const filterUrl = (status: string) => buildUrl({ status })
 
   const statusFilters = [
     { value: '', label: 'All' },
@@ -75,6 +80,7 @@ export default async function InboxPage({
       {/* Search — plain HTML form, works without JS */}
       <form method="get" action="/inbox" style={{ marginBottom: '12px' }}>
         {currentStatus && <input type="hidden" name="status" value={currentStatus} />}
+        {currentSort !== 'newest' && <input type="hidden" name="sort" value={currentSort} />}
         <div style={{ position: 'relative' }}>
           <svg
             style={{
@@ -102,8 +108,8 @@ export default async function InboxPage({
         </div>
       </form>
 
-      {/* Filter chips — plain <a> links */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto' }}>
+      {/* Filter chips + sort toggle — plain <a> links */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', alignItems: 'center' }}>
         {statusFilters.map((f) => (
           <a
             key={f.value}
@@ -121,6 +127,34 @@ export default async function InboxPage({
             {f.label}
           </a>
         ))}
+
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
+
+        {/* Sort toggle */}
+        <a
+          href={buildUrl({ sort: currentSort === 'newest' ? 'oldest' : 'newest' })}
+          style={{
+            flexShrink: 0,
+            padding: '8px 12px',
+            borderRadius: '9999px',
+            fontSize: '13px', fontWeight: 500,
+            textDecoration: 'none',
+            backgroundColor: '#f3f4f6',
+            color: '#4b5563',
+            display: 'flex', alignItems: 'center', gap: '4px',
+          }}
+          title={currentSort === 'newest' ? 'Sort: Newest first' : 'Sort: Oldest first'}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            {currentSort === 'newest' ? (
+              <><line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" /></>
+            ) : (
+              <><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></>
+            )}
+          </svg>
+          {currentSort === 'newest' ? 'Newest' : 'Oldest'}
+        </a>
       </div>
 
       {/* Error */}
