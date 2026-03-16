@@ -1,6 +1,13 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'EXTRACT_CONTENT') {
-    const extractor = isSkoolPage() ? extractSkool() : extractGeneric();
+    let extractor;
+    if (isSkoolPage()) {
+      extractor = extractSkool();
+    } else if (isGoogleDocsPage()) {
+      extractor = extractGoogleDocs();
+    } else {
+      extractor = extractGeneric();
+    }
     extractor
       .then(result => sendResponse(result))
       .catch(err => sendResponse({ success: false, error: err.message }));
@@ -10,6 +17,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 function isSkoolPage() {
   return location.hostname.endsWith('skool.com');
+}
+
+function isGoogleDocsPage() {
+  return location.hostname === 'docs.google.com' && location.pathname.includes('/document/');
 }
 
 async function extractSkool() {
@@ -189,6 +200,78 @@ function skoolMarkdownToText(md) {
     .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '$1')
     .replace(/^#{1,3} /gm, '')
     .trim();
+}
+
+async function extractGoogleDocs() {
+  const title = document.querySelector('.docs-title-input')?.value
+    || document.title.replace(/ - Google Docs$/, '').trim()
+    || 'Untitled';
+
+  // Strategy 1: Published Google Docs (/pub) — regular HTML
+  if (location.pathname.endsWith('/pub')) {
+    const content = document.querySelector('#contents');
+    if (content) {
+      return {
+        success: true,
+        title,
+        content: content.innerHTML,
+        author: '',
+        url: window.location.href,
+        siteName: 'Google Docs',
+      };
+    }
+  }
+
+  // Strategy 2: Editor view — extract from kix renderer
+  const paragraphs = document.querySelectorAll('.kix-paragraphrenderer');
+  if (paragraphs.length > 0) {
+    const lines = [];
+    for (const para of paragraphs) {
+      // Get text from word nodes
+      const words = para.querySelectorAll('.kix-wordhtmlgenerator-word-node');
+      if (words.length > 0) {
+        const text = Array.from(words).map(w => w.textContent).join('');
+        if (text.trim()) lines.push(text.trim());
+      } else {
+        // Fallback: get innerText of the paragraph
+        const text = para.innerText?.trim();
+        if (text) lines.push(text);
+      }
+    }
+
+    if (lines.length > 0) {
+      // Convert to simple HTML paragraphs
+      const content = lines.map(l => `<p>${l}</p>`).join('\n');
+      return {
+        success: true,
+        title,
+        content,
+        author: '',
+        url: window.location.href,
+        siteName: 'Google Docs',
+      };
+    }
+  }
+
+  // Strategy 3: Try selecting all text via the accessible view
+  // Google Docs has an accessibility mode with .docs-texteventtarget-iframe
+  const textEl = document.querySelector('.doc-content') || document.querySelector('[role="document"]');
+  if (textEl) {
+    const text = textEl.innerText?.trim();
+    if (text && text.length > 50) {
+      const content = text.split(/\n\n+/).filter(p => p.trim()).map(p => `<p>${p.trim()}</p>`).join('\n');
+      return {
+        success: true,
+        title,
+        content,
+        author: '',
+        url: window.location.href,
+        siteName: 'Google Docs',
+      };
+    }
+  }
+
+  return { success: false, error: 'Could not extract Google Docs content. Try selecting all text (Ctrl+A), copying (Ctrl+C), and pasting into the content field.' };
 }
 
 async function extractGeneric() {
