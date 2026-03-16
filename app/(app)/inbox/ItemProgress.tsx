@@ -16,12 +16,23 @@ export default function ItemProgress({ itemId }: { itemId: string }) {
       const saved = localStorage.getItem(PROGRESS_PREFIX + itemId)
       if (saved) {
         const val = parseInt(saved, 10)
-        if (val > 0 && val <= 100) setPct(val)
+        if (val > 0 && val <= 100) {
+          setPct(val)
+          // Auto mark as read when progress is 100%
+          if (val >= 100) {
+            fetch(`/api/inbox/${itemId}/status`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'read' }),
+            }).catch(() => {})
+          }
+        }
       }
     } catch {}
   }, [itemId])
 
-  if (pct === null || pct === 0) return null
+  // Hide progress for completed items (already marked as read)
+  if (pct === null || pct === 0 || pct >= 100) return null
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
