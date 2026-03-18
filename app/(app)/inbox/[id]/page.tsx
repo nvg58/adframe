@@ -248,7 +248,7 @@ export default async function InboxReaderPage({
       )}
 
       {/* Article */}
-      <article style={{ maxWidth: '640px', margin: '0 auto', padding: '32px 20px 48px' }}>
+      <article style={{ maxWidth: '800px', margin: '0 auto', padding: '32px 20px 48px' }}>
         {/* Tags */}
         {item.tags && item.tags.length > 0 && (
           <p style={{
