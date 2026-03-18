@@ -305,6 +305,7 @@ export default async function InboxReaderPage({
                     padding: '8px 12px',
                     backgroundColor: '#fffde7', borderLeft: '4px solid #fcd34d',
                     borderRadius: '0 8px 8px 0',
+                    color: '#555', fontStyle: 'italic', fontSize: '0.9em', lineHeight: '1.7',
                   }}>
                 </div>
               )}
