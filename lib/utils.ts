@@ -44,25 +44,57 @@ export function splitHtmlIntoParagraphs(html: string): string[] {
       .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
   }
 
-  // HTML content: split by block-level elements
+  // HTML content: extract tables/lists as whole blocks first, then split rest by paragraphs
   const blocks: string[] = []
+
+  // Step 1: Pull out <table>...</table> and <ol>...</ol> and <ul>...</ul> as whole blocks
+  // Replace them with placeholders, then split the rest
+  const preserved: string[] = []
+  const placeholder = (i: number) => `<!--BLOCK_${i}-->`
+
+  const processed = html.replace(/<(table|ol|ul)[\s\S]*?<\/\1>/gi, (match) => {
+    const idx = preserved.length
+    preserved.push(match)
+    return placeholder(idx)
+  })
+
+  // Step 2: Split remaining content by block-level closing tags
+  const parts = processed.split(/(<\/(?:p|h[1-6]|blockquote|div|section|article|figure|figcaption|pre)>|<hr\s*\/?>)/i)
+
   let current = ''
-
-  // Split HTML into lines and group by block elements
-  const parts = html.split(/(<\/(?:p|h[1-6]|blockquote|ol|ul|li|div|section|article|figure|figcaption|pre|table)>|<hr\s*\/?>)/i)
-
   for (let i = 0; i < parts.length; i++) {
     current += parts[i]
-    // If this part is a closing block tag or <hr>, flush current block
     if (i % 2 === 1) {
       const trimmed = current.trim()
       if (trimmed) blocks.push(trimmed)
       current = ''
     }
   }
-
-  // Flush remaining
   if (current.trim()) blocks.push(current.trim())
+
+  // Step 3: Restore preserved blocks in place of placeholders
+  const result: string[] = []
+  for (const block of blocks) {
+    const placeholderMatch = block.match(/<!--BLOCK_(\d+)-->/)
+    if (placeholderMatch) {
+      // If block is ONLY a placeholder, push the preserved block
+      const idx = parseInt(placeholderMatch[1])
+      const before = block.substring(0, placeholderMatch.index).trim()
+      const after = block.substring(placeholderMatch.index! + placeholderMatch[0].length).trim()
+      if (before) result.push(before)
+      result.push(preserved[idx])
+      if (after) result.push(after)
+    } else {
+      result.push(block)
+    }
+  }
+
+  // Also check for any preserved blocks that weren't in any split part
+  // (edge case: placeholder is the only content between two block elements)
+  return result.filter(block => {
+    const textContent = block.replace(/<[^>]*>/g, '').replace(/<!--BLOCK_\d+-->/g, '').trim()
+    return textContent.length > 5 || /<(table|ol|ul)/i.test(block)
+  })
 
   // Filter out empty blocks and very short ones (< 5 chars of text)
   return blocks.filter(block => {

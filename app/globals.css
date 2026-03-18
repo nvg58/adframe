@@ -168,8 +168,6 @@ body {
   font-size: 0.9em;
   text-indent: 0;
   text-align: left;
-  overflow-x: auto;
-  display: block;
 }
 
 .reader-content thead {

@@ -285,9 +285,17 @@ export default async function InboxReaderPage({
 
         {/* Article body — font size controlled via CSS variable from FontSizeControls */}
         <div className="reader-content" style={{ fontSize: 'var(--reader-font-size, 16px)', lineHeight: 1.8 }}>
-          {paragraphs.map((para, i) => (
+          {paragraphs.map((para, i) => {
+            const isTable = /^<table/i.test(para.trim())
+            return (
             <div key={i}>
-              <div dangerouslySetInnerHTML={{ __html: para }} style={{ marginBottom: '4px' }} />
+              <div
+                dangerouslySetInnerHTML={{ __html: para }}
+                style={{
+                  marginBottom: '4px',
+                  ...(isTable ? { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } : {}),
+                }}
+              />
               {showTranslation && translationMap.has(i) && (
                 <div style={{
                   marginTop: '4px', marginBottom: '8px',
@@ -300,7 +308,7 @@ export default async function InboxReaderPage({
                 </div>
               )}
             </div>
-          ))}
+          )})}
         </div>
 
         {/* Auto mark as read when user scrolls to end */}
