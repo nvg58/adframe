@@ -1,6 +1,6 @@
 const GOOGLE_TRANSLATE_URL = 'https://translation.googleapis.com/language/translate/v2'
 
-export async function translateText(text: string): Promise<string> {
+export async function translateText(text: string, format: 'text' | 'html' = 'text'): Promise<string> {
   const apiKey = process.env.GOOGLE_TRANSLATE_API_KEY
   if (!apiKey) {
     throw new Error('GOOGLE_TRANSLATE_API_KEY is not configured')
@@ -18,7 +18,7 @@ export async function translateText(text: string): Promise<string> {
         q: text,
         source: 'en',
         target: 'vi',
-        format: 'text',
+        format,
       }),
     }
   )

@@ -58,7 +58,8 @@ export default async function InboxReaderPage({
 
       if (!translated) {
         try {
-          translated = await translateText(plain)
+          // Send original HTML so translation preserves formatting
+          translated = await translateText(paragraphs[i], 'html')
           await supabase.from('translations').upsert({
             inbox_item_id: item.id,
             paragraph_hash: hash,
@@ -297,14 +298,14 @@ export default async function InboxReaderPage({
                 }}
               />
               {showTranslation && translationMap.has(i) && (
-                <div style={{
-                  marginTop: '4px', marginBottom: '8px',
-                  padding: '8px 12px',
-                  backgroundColor: '#fffde7', borderLeft: '4px solid #fcd34d',
-                  color: '#555', fontStyle: 'italic', fontSize: '0.9em',
-                  borderRadius: '0 8px 8px 0', lineHeight: '1.7',
-                }}>
-                  {translationMap.get(i)}
+                <div
+                  dangerouslySetInnerHTML={{ __html: translationMap.get(i)! }}
+                  style={{
+                    marginTop: '4px', marginBottom: '8px',
+                    padding: '8px 12px',
+                    backgroundColor: '#fffde7', borderLeft: '4px solid #fcd34d',
+                    borderRadius: '0 8px 8px 0',
+                  }}>
                 </div>
               )}
             </div>
