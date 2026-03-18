@@ -37,7 +37,7 @@ async function parseEpub(buffer: Buffer, filename: string): Promise<ParseResult>
   const author = metadata.creator || ''
 
   const chapters = epub.flow || []
-  const items: ParsedItem[] = []
+  const allContent: string[] = []
 
   for (const chapter of chapters) {
     if (!chapter.id) continue
@@ -60,33 +60,27 @@ async function parseEpub(buffer: Buffer, filename: string): Promise<ParseResult>
 
       if (!content || content.length < 20) continue
 
-      const chapterTitle = chapter.title || extractFirstHeading(content) || `Chapter ${items.length + 1}`
-
-      items.push({
-        title: `${bookTitle} - ${chapterTitle}`,
-        content,
-        source_author: author || undefined,
-        tags: ['epub', bookTitle],
-      })
+      allContent.push(content)
     } catch {
       // Skip unreadable chapters
     }
   }
 
-  if (items.length === 0) {
-    throw new Error('Could not extract any chapters from this EPUB file.')
+  if (allContent.length === 0) {
+    throw new Error('Could not extract any content from this EPUB file.')
   }
 
-  return { items }
+  // Combine all chapters into one item with <hr> separators
+  return {
+    items: [{
+      title: bookTitle,
+      content: allContent.join('\n<hr>\n'),
+      source_author: author || undefined,
+      tags: ['epub'],
+    }],
+  }
 }
 
-function extractFirstHeading(html: string): string | null {
-  const match = html.match(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/i)
-  if (match) {
-    return match[1].replace(/<[^>]*>/g, '').trim() || null
-  }
-  return null
-}
 
 async function parseDocx(buffer: Buffer, filename: string): Promise<ParseResult> {
   const result = await mammoth.convertToHtml({ buffer })
