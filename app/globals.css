@@ -162,12 +162,12 @@ body {
 }
 
 .reader-content table {
-  width: 100%;
   border-collapse: collapse;
   margin: 1em 0;
   font-size: 0.75em;
   text-indent: 0;
   text-align: left;
+  white-space: nowrap;
 }
 
 .reader-content thead {
@@ -176,14 +176,14 @@ body {
 
 .reader-content th {
   font-weight: 600;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 1px solid var(--color-border);
   text-indent: 0;
   text-align: left;
 }
 
 .reader-content td {
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 1px solid var(--color-border);
   text-indent: 0;
   text-align: left;
