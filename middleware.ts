@@ -31,6 +31,13 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  // Redirect / to /inbox if logged in
+  if (pathname === '/' && user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/inbox'
+    return NextResponse.redirect(url)
+  }
+
   // Protected routes
   if (
     (pathname.startsWith('/inbox') ||
@@ -49,6 +56,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',
     '/inbox/:path*',
     '/swipe/:path*',
     '/tests/:path*',
